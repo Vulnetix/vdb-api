@@ -26,7 +26,7 @@ if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
     echo "  export AWS_ACCESS_KEY_ID=your_key"
     echo "  export AWS_SECRET_ACCESS_KEY=your_secret"
     echo "  export AWS_REGION=us-east-1"
-    echo "  export AWS_SERVICE=execute-api"
+    echo "  export AWS_SERVICE=vdb"
     echo ""
     exit 1
 fi

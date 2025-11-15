@@ -53,7 +53,7 @@ if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
     echo -e "  ${YELLOW}export AWS_ACCESS_KEY_ID=your_access_key${NC}"
     echo -e "  ${YELLOW}export AWS_SECRET_ACCESS_KEY=your_secret_key${NC}"
     echo -e "  ${YELLOW}export AWS_REGION=us-east-1${NC} (optional)"
-    echo -e "  ${YELLOW}export AWS_SERVICE=execute-api${NC} (optional)"
+    echo -e "  ${YELLOW}export AWS_SERVICE=vdb${NC} (optional)"
     echo ""
     echo -e "Or run this script with test credentials:"
     echo -e "  ${YELLOW}AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test ./test-auth-endpoint.sh${NC}"

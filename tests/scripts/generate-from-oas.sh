@@ -59,7 +59,7 @@ if command -v openapi2postmanv2 &> /dev/null; then
   "const accessKey = pm.collectionVariables.get('awsAccessKeyId') || pm.environment.get('awsAccessKeyId');",
   "const secretKey = pm.collectionVariables.get('awsSecretAccessKey') || pm.environment.get('awsSecretAccessKey');",
   "const region = pm.collectionVariables.get('awsRegion') || 'us-east-1';",
-  "const service = pm.collectionVariables.get('awsService') || 'execute-api';",
+  "const service = pm.collectionVariables.get('awsService') || 'vdb';",
   "",
   "if (!accessKey || !secretKey) {",
   "    console.error('AWS credentials not configured. Set awsAccessKeyId and awsSecretAccessKey in collection variables.');",
@@ -180,7 +180,7 @@ PREREQ_EOF
             {"key": "awsAccessKeyId", "value": "YOUR_AWS_ACCESS_KEY_ID", "type": "default", "description": "AWS Access Key ID for Signature V4 authentication"},
             {"key": "awsSecretAccessKey", "value": "YOUR_AWS_SECRET_ACCESS_KEY", "type": "secret", "description": "AWS Secret Access Key for Signature V4 authentication"},
             {"key": "awsRegion", "value": "us-east-1", "type": "default", "description": "AWS Region (e.g., us-east-1)"},
-            {"key": "awsService", "value": "execute-api", "type": "default", "description": "AWS Service name (e.g., execute-api)"},
+            {"key": "awsService", "value": "vdb", "type": "default", "description": "AWS Service name (e.g., vdb)"},
             {"key": "baseUrl", "value": "http://localhost:8778", "type": "default", "description": "API Base URL"}
         ]' "${OUTPUT_DIR}/postman-collection.json" > "${OUTPUT_DIR}/postman-collection-temp.json"
         mv "${OUTPUT_DIR}/postman-collection-temp.json" "${OUTPUT_DIR}/postman-collection.json"
@@ -227,7 +227,7 @@ AWS-Service: {{$processEnv AWS_SERVICE}}
 # AWS_ACCESS_KEY_ID=your_key
 # AWS_SECRET_ACCESS_KEY=your_secret
 # AWS_REGION=us-east-1
-# AWS_SERVICE=execute-api
+# AWS_SERVICE=vdb
 
 EOF
 
@@ -262,7 +262,7 @@ cat > "${OUTPUT_DIR}/sign-aws-request.js" << 'JSEOF'
  *   AWS_ACCESS_KEY_ID - Your AWS access key
  *   AWS_SECRET_ACCESS_KEY - Your AWS secret key
  *   AWS_REGION - AWS region (default: us-east-1)
- *   AWS_SERVICE - AWS service name (default: execute-api)
+ *   AWS_SERVICE - AWS service name (default: vdb)
  */
 
 const crypto = require('crypto');
@@ -272,7 +272,7 @@ const { URL } = require('url');
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || 'YOUR_ACCESS_KEY';
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || 'YOUR_SECRET_KEY';
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
-const AWS_SERVICE = process.env.AWS_SERVICE || 'execute-api';
+const AWS_SERVICE = process.env.AWS_SERVICE || 'vdb';
 
 // Parse arguments
 const method = (process.argv[2] || 'GET').toUpperCase();
@@ -349,8 +349,8 @@ AWS_SECRET_ACCESS_KEY=your_secret_access_key_here
 # AWS Region (default: us-east-1)
 AWS_REGION=us-east-1
 
-# AWS Service Name (default: execute-api)
-AWS_SERVICE=execute-api
+# AWS Service Name (default: vdb)
+AWS_SERVICE=vdb
 
 # API Base URL (optional - defaults in .http files)
 # BASE_URL=http://localhost:8778
@@ -391,7 +391,7 @@ Set these in the **Variables** tab:
 | `awsAccessKeyId` | Your AWS Access Key | `AKIAIOSFODNN7EXAMPLE` |
 | `awsSecretAccessKey` | Your AWS Secret Key | `wJalrXUtn...` (will be masked) |
 | `awsRegion` | `us-east-1` | Pre-filled |
-| `awsService` | `execute-api` | Pre-filled |
+| `awsService` | `vdb` | Pre-filled |
 | `baseUrl` | `http://localhost:8778` | Pre-filled |
 
 ## What the Pre-Request Script Does Automatically
@@ -420,7 +420,7 @@ When you send the `/auth/token` request, the embedded pre-request script:
 
 **401 Unauthorized?**
 - Check AWS credentials are correct
-- Verify region is `us-east-1` and service is `execute-api`
+- Verify region is `us-east-1` and service is `vdb`
 - Ensure system clock is accurate (AWS requires ±5 minutes)
 
 **Variables not working?**
