@@ -33,9 +33,6 @@
 # iconify dist files
 src/@iconify/icons-bundle.js
 
-# Generated cache metadata
-src/cache/generated/
-
 # CloudFlare
 **/.wrangler
 **/.dev.vars
