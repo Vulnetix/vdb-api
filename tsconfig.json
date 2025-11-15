@@ -1,0 +1,39 @@
+{
+    "include": [
+        "functions/**/*",
+        "src/**/*",
+        "shared/**/*",
+        "schemas/**/*",
+        "*.d.ts",
+        "_worker.ts",
+        "api/[[catchall]].ts"
+    ],
+    "compilerOptions": {
+        "skipLibCheck": true,
+        "paths": {
+            "@/*": [
+                "./src/*"
+            ],
+            "@shared/*": [
+                "./src/shared/*"
+            ],
+            "@schemas/*": [
+                "./schemas/*"
+            ],
+            "@worker": [
+                "./_worker.ts"
+            ]
+        },
+        "sourceMap": true,
+        "module": "es2022",
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "target": "ESNext",
+        "types": []
+    },
+    "exclude": [
+        "node_modules",
+        "dist",
+        "tests"
+    ]
+}

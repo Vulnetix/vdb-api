@@ -1,0 +1,64 @@
+###
+# Authentication API Tests - /auth
+# Tests for JWT token generation using AWS SigV4 authentication
+###
+
+# Load shared configuration
+< ../../test.config.http
+
+###
+# Test 1: Get JWT Token (requires valid SigV4 signature)
+# NOTE: You'll need to generate a valid AWS SigV4 signature
+# See docs/AUTH.md for signature generation examples
+GET {{baseUrl}}/{{apiVersion}}/auth/token
+Authorization: AWS4-HMAC-SHA512 Credential={{orgId}}/20240101/us-east-1/vdb/aws4_request, SignedHeaders=x-amz-date, Signature=YOUR_SIGNATURE_HERE
+X-Amz-Date: 20240101T120000Z
+
+###
+# Test 2: Verify token response structure
+# @name getToken
+GET {{baseUrl}}/{{apiVersion}}/auth/token
+Authorization: AWS4-HMAC-SHA512 Credential={{orgId}}/20240101/us-east-1/vdb/aws4_request, SignedHeaders=x-amz-date, Signature=YOUR_SIGNATURE_HERE
+X-Amz-Date: 20240101T120000Z
+
+> {%
+  client.test("Token response is valid", function() {
+    client.assert(response.status === 200, "Response status is 200");
+    client.assert(response.body.token !== undefined, "Token exists in response");
+    client.assert(response.body.iss === "urn:vulnetix:vdb", "Issuer is correct");
+    client.assert(response.body.exp !== undefined, "Expiration time exists");
+  });
+
+  // Store token for subsequent tests
+  client.global.set("authToken", response.body.token);
+%}
+
+###
+# Test 3: Authentication failure - missing signature
+GET {{baseUrl}}/{{apiVersion}}/auth/token
+X-Amz-Date: 20240101T120000Z
+
+> {%
+  client.test("Missing signature returns 401", function() {
+    client.assert(response.status === 401, "Response status is 401");
+  });
+%}
+
+###
+# Test 4: Authentication failure - invalid signature
+GET {{baseUrl}}/{{apiVersion}}/auth/token
+Authorization: AWS4-HMAC-SHA512 Credential=invalid/20240101/us-east-1/vdb/aws4_request, SignedHeaders=x-amz-date, Signature=invalidsignature
+X-Amz-Date: 20240101T120000Z
+
+> {%
+  client.test("Invalid signature returns 401", function() {
+    client.assert(response.status === 401, "Response status is 401");
+    client.assert(response.body.error !== undefined, "Error message exists");
+  });
+%}
+
+###
+# Test 5: Production - Get JWT Token
+GET {{prodUrl}}/{{apiVersion}}/auth/token
+Authorization: AWS4-HMAC-SHA512 Credential={{orgId}}/20240101/us-east-1/vdb/aws4_request, SignedHeaders=x-amz-date, Signature=YOUR_SIGNATURE_HERE
+X-Amz-Date: 20240101T120000Z

@@ -1,0 +1,17 @@
+# Cloudflare Wrangler Environment Variables
+# For documentation on how .dev.vars works with wrangler CLI, see:
+# https://developers.cloudflare.com/workers/configuration/environment-variables/#using-dev-vars
+ARTIFACTS_BASE_URL=https://artifacts.vulnetix.com
+NODE_ENV=development
+
+# JWT secret for signing session tokens (generate with: openssl rand -base64 32)
+JWT_SECRET=
+
+# LOG_LEVEL: DEBUG, INFO, WARNING, ERROR
+# Note: MITRE CVE List scheduled task skips execution when LOG_LEVEL=DEBUG (local dev)
+# due to GitHub archive streaming incompatibility with wrangler dev's R2 emulation
+LOG_LEVEL=INFO
+
+# Internal Services
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/vdb
+REDIS_URL=redis://127.0.0.1:6379

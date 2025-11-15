@@ -1,0 +1,66 @@
+###
+# VDB Manager API Tests (DEPRECATED)
+#
+# ⚠️  This file is deprecated. Please use the new test suite in tests/ directory.
+#
+# New test structure:
+# - tests/test.config.http         - Shared configuration
+# - tests/oas/openapi.http         - OpenAPI spec tests
+# - tests/v1/auth/token.http       - Authentication tests
+# - tests/v1/info/cve-info.http    - CVE info tests
+# - tests/v1/vuln/vulnerability.http - Vulnerability tests
+# - tests/v1/exploits/exploit-intel.http - Exploit tests
+#
+# Quick start:
+#   1. Configure credentials: edit tests/test.config.http
+#   2. Run all tests: just test
+#   3. Or open test files in VS Code with REST Client extension
+#
+# See tests/README.md for full documentation
+###
+
+@baseUrl = http://localhost:8778
+@prodUrl = https://api.vdb.vulnetix.com
+@apiVersion = v1
+
+# Set your credentials here (for local testing)
+@orgId = YOUR_ORG_UUID_HERE
+@orgSecret = YOUR_ORG_SECRET_HERE
+@token = YOUR_JWT_TOKEN_HERE
+
+###
+# Quick Test - OpenAPI Specification
+GET {{baseUrl}}/{{apiVersion}}/spec
+
+###
+# Quick Test - Get JWT Token (requires SigV4 signature)
+GET {{baseUrl}}/{{apiVersion}}/auth/token
+Authorization: AWS4-HMAC-SHA512 Credential={{orgId}}/20240101/us-east-1/vdb/aws4_request, SignedHeaders=x-amz-date, Signature=YOUR_SIGNATURE_HERE
+X-Amz-Date: 20240101T120000Z
+
+###
+# Quick Test - CVE Information (versioned endpoint)
+GET {{baseUrl}}/{{apiVersion}}/info/CVE-2024-1234
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+###
+# Quick Test - Vulnerability Data (versioned endpoint)
+GET {{baseUrl}}/{{apiVersion}}/vuln/CVE-2024-1234
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+###
+# Quick Test - Exploit Intelligence (versioned endpoint)
+GET {{baseUrl}}/{{apiVersion}}/exploits/CVE-2024-1234
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+###
+# For comprehensive testing, use the structured test suite:
+#   just test          - Run all tests
+#   just test-verbose  - Run with verbose output
+#   just test-prod     - Test against production
+#
+# See README.md for more information
+###

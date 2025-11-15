@@ -1,0 +1,42 @@
+###
+# OpenAPI Specification Tests
+# Tests for api endpoints (public, no authentication required)
+###
+
+# Load shared configuration
+< ../test.config.http
+
+###
+# Test 1: Get OpenAPI v1 JSON specification
+GET {{baseUrl}}/v1/spec
+Accept: application/json
+
+###
+# Test 2: Get OpenAPI v1 specification (production)
+GET {{prodUrl}}/v1/spec
+Accept: application/json
+
+###
+# Test 3: Access Swagger UI
+GET {{baseUrl}}/v1/swagger
+Accept: text/html
+
+###
+# Test 4: Verify OpenAPI spec structure
+# @name getOASSpec
+GET {{baseUrl}}/v1/spec
+Accept: application/json
+
+###
+# Test 5: Validate required OpenAPI fields exist
+# This test depends on Test 4 completing successfully
+GET {{baseUrl}}/v1/spec
+Accept: application/json
+
+> {%
+  client.test("Response is valid OpenAPI 3.1.0", function() {
+    client.assert(response.body.openapi === "3.1.0", "OpenAPI version is 3.1.0");
+    client.assert(response.body.info !== undefined, "Info section exists");
+    client.assert(response.body.paths !== undefined, "Paths section exists");
+  });
+%}

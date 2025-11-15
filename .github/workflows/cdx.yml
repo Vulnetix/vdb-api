@@ -1,0 +1,40 @@
+name: npm-artifacts
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Install dependencies
+        run: |
+          corepack enable
+          yarn set version stable
+          yarn plugin import https://github.com/CycloneDX/cyclonedx-node-yarn/releases/latest/download/yarn-plugin-cyclonedx.cjs
+
+      - name: Build project
+        run: |
+          yarn install --immutable
+          yarn cyclonedx --spec-version 1.6 --output-format JSON --output-file vulnetix.cdx.json
+
+      - name: Upload vulnetix.cdx.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyclonedx
+          path: vulnetix.cdx.json

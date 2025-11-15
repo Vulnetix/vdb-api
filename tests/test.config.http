@@ -1,0 +1,24 @@
+###
+# VDB API Test Configuration
+# Shared variables for all test files
+###
+
+# Environment URLs
+@baseUrl = http://localhost:8778
+@prodUrl = https://api.vdb.vulnetix.com
+
+# API Version
+@apiVersion = v1
+
+# Set your test credentials here (for local testing)
+# Get these from your organization settings
+@orgId = 12f62d51-25ac-441d-829d-f94104e2fbd4
+@orgSecret = gCJNrAMaUaI6aP27yO2cvin4DfMivVDUnUuDQs9XB2l0o49hQlrOnjmr8UBPVXi2
+
+# JWT Token (obtained from /auth/token endpoint)
+# You'll need to update this after authenticating
+@token = YOUR_JWT_TOKEN_HERE
+
+# Common Headers
+@contentType = application/json
+@userAgent = VDB-API-Tests/1.0

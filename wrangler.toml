@@ -1,0 +1,67 @@
+name = "vdb-api"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["cf_botmanagement_default", "nodejs_compat"]
+upload_source_maps = true
+main = "./_worker.ts"
+preview_urls = false
+workers_dev = false
+
+[[r2_buckets]]
+binding = 'r2artifacts'
+bucket_name = 'artifacts'
+
+[[kv_namespaces]]
+binding = "QUERY_CACHE"
+id = "a9572ae80b5742ac96f62bcd180210c9"
+preview_id = "a9572ae80b5742ac96f62bcd180210c9"
+
+[[hyperdrive]]
+binding = "vdb"
+id = "5f6d92ae237b4cfab6e4e004682212ec"
+localConnectionString = "postgresql://postgres:postgres@127.0.0.1:5432/vdb"
+
+# Queue Configuration for CVE/Advisory Processing
+[[queues.producers]]
+queue = "cve-processing-queue"
+binding = "CVE_QUEUE"
+
+[vars]
+LOG_LEVEL = "DEBUG"
+ARTIFACTS_BASE_URL = "https://artifacts.vulnetix.com"
+REDIS_URL = "redis://127.0.0.1:6379"  # Local Redis for queue mock (dev only)
+
+[env.production]
+name = "vdb-api"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["cf_botmanagement_default", "nodejs_compat"]
+upload_source_maps = true
+main = "./_worker.ts"
+preview_urls = false
+workers_dev = false
+
+[env.production.observability.logs]
+enabled = true
+
+[[env.production.r2_buckets]]
+binding = 'r2artifacts'
+bucket_name = 'artifacts'
+
+[[env.production.kv_namespaces]]
+binding = "QUERY_CACHE"
+id = "427a79e08dfe4b36b8eff10645e17337"
+
+[[env.production.hyperdrive]]
+binding = "vdb"
+id = "5f6d92ae237b4cfab6e4e004682212ec"
+
+[[env.production.queues.producers]]
+queue = "cve-processing-queue"
+binding = "CVE_QUEUE"
+
+[[env.production.routes]]
+pattern = "api.vdb.vulnetix.com"
+custom_domain = true
+
+[env.production.vars]
+LOG_LEVEL = "WARNING"
+ARTIFACTS_BASE_URL = "https://artifacts.vulnetix.com"

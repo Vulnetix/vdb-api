@@ -1,0 +1,1529 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// GitHub User data verbatim from GitHub API
+model GitHubUser {
+    id                Int      @id
+    login             String   @unique
+    nodeId            String
+    avatarUrl         String?
+    gravatarId        String?
+    url               String
+    htmlUrl           String
+    followersUrl      String
+    followingUrl      String
+    gistsUrl          String
+    starredUrl        String
+    subscriptionsUrl  String
+    organizationsUrl  String
+    reposUrl          String
+    eventsUrl         String
+    receivedEventsUrl String
+    type              String // User or Bot
+    siteAdmin         Boolean  @default(false)
+    name              String?
+    company           String?
+    blog              String?
+    location          String?
+    email             String?
+    hireable          Boolean?
+    bio               String?
+    twitterUsername   String?
+    publicRepos       Int?
+    publicGists       Int?
+    followers         Int?
+    following         Int?
+    createdAt         Int? // GitHub timestamp (Unix)
+    updatedAt         Int? // GitHub timestamp (Unix)
+
+    // Relations
+    emails       GitHubUserEmail[]
+    repositories GitHubRepository[]
+
+    @@index([email])
+}
+
+// GitHub User emails verbatim from GitHub API
+model GitHubUserEmail {
+    id           Int        @id @default(autoincrement())
+    githubUserId Int
+    githubUser   GitHubUser @relation(fields: [githubUserId], references: [id])
+    email        String
+    verified     Boolean
+    primary      Boolean
+    visibility   String? // public or private
+
+    @@unique([githubUserId, email])
+    @@index([email])
+    @@index([githubUserId])
+}
+
+// Google SSO User model
+model User {
+    id        String   @id @default(uuid())
+    email     String   @unique
+    name      String?
+    picture   String?
+    googleId  String   @unique
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    sessions Session[]
+
+    @@index([email])
+    @@index([googleId])
+}
+
+// Session model for managing user authentication
+model Session {
+    id           String   @id @default(uuid())
+    userId       String
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    accessToken  String   @db.Text
+    refreshToken String?  @db.Text
+    idToken      String?  @db.Text
+    expiresAt    DateTime
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    @@index([userId])
+    @@index([expiresAt])
+}
+
+// GitHub Organization data verbatim from GitHub API
+model GitHubOrganization {
+    id                                   Int     @id
+    login                                String  @unique
+    nodeId                               String
+    url                                  String
+    reposUrl                             String
+    eventsUrl                            String
+    hooksUrl                             String?
+    issuesUrl                            String?
+    membersUrl                           String?
+    publicMembersUrl                     String?
+    avatarUrl                            String?
+    description                          String?
+    name                                 String?
+    company                              String?
+    blog                                 String?
+    location                             String?
+    email                                String?
+    twitterUsername                      String?
+    isVerified                           Boolean @default(false)
+    hasOrganizationProjects              Boolean @default(false)
+    hasRepositoryProjects                Boolean @default(false)
+    publicRepos                          Int?
+    publicGists                          Int?
+    followers                            Int?
+    following                            Int?
+    htmlUrl                              String?
+    createdAt                            Int? // GitHub timestamp (Unix)
+    updatedAt                            Int? // GitHub timestamp (Unix)
+    type                                 String? // Organization
+    totalPrivateRepos                    Int?
+    ownedPrivateRepos                    Int?
+    privateGists                         Int?
+    diskUsage                            Int?
+    collaborators                        Int?
+    billingEmail                         String?
+    plan                                 Json? // JSON of plan object
+    defaultRepositoryPermission          String?
+    membersCanCreateRepositories         Boolean @default(false)
+    twoFactorRequirementEnabled          Boolean @default(false)
+    membersCanCreatePages                Boolean @default(false)
+    membersCanCreatePublicPages          Boolean @default(false)
+    membersCanCreatePrivatePages         Boolean @default(false)
+    membersCanCreateInternalRepositories Boolean @default(false)
+    membersCanCreatePublicRepositories   Boolean @default(false)
+    membersCanCreatePrivateRepositories  Boolean @default(false)
+    membersCanForkPrivateRepositories    Boolean @default(false)
+    webCommitSignoffRequired             Boolean @default(false)
+
+    repositories GitHubRepository[]
+
+    @@index([login])
+}
+
+// GitHub Repository - stores verbatim data from GitHub API
+// Supports both User and Organization ownership models
+model GitHubRepository {
+    id       Int    @id // GitHub repository ID
+    nodeId   String @unique
+    name     String
+    fullName String @unique
+
+    // Owner information - can be GitHubUser or GitHubOrganization
+    ownerType          GitHubOwnerType
+    userId             Int?                // References GitHubUser.id when ownerType is User
+    organizationId     Int?                // References GitHubOrganization.id when ownerType is Organization
+    githubUser         GitHubUser?         @relation(fields: [userId], references: [id], map: "GitHubRepository_user_fkey")
+    githubOrganization GitHubOrganization? @relation(fields: [organizationId], references: [id], map: "GitHubRepository_org_fkey")
+
+    // GitHub API fields (common to both User and Organization repos)
+    private          Boolean @default(false)
+    htmlUrl          String
+    description      String?
+    fork             Boolean @default(false)
+    url              String
+    archiveUrl       String?
+    assigneesUrl     String?
+    blobsUrl         String?
+    branchesUrl      String?
+    collaboratorsUrl String?
+    commentsUrl      String?
+    commitsUrl       String?
+    compareUrl       String?
+    contentsUrl      String?
+    contributorsUrl  String?
+    deploymentsUrl   String?
+    downloadsUrl     String?
+    eventsUrl        String?
+    forksUrl         String?
+    gitCommitsUrl    String?
+    gitRefsUrl       String?
+    gitTagsUrl       String?
+    gitUrl           String?
+    issueCommentUrl  String?
+    issueEventsUrl   String?
+    issuesUrl        String?
+    keysUrl          String?
+    labelsUrl        String?
+    languagesUrl     String?
+    mergesUrl        String?
+    milestonesUrl    String?
+    notificationsUrl String?
+    pullsUrl         String?
+    releasesUrl      String?
+    sshUrl           String?
+    stargazersUrl    String?
+    statusesUrl      String?
+    subscribersUrl   String?
+    subscriptionUrl  String?
+    tagsUrl          String?
+    teamsUrl         String?
+    treesUrl         String?
+    cloneUrl         String?
+    mirrorUrl        String?
+    hooksUrl         String?
+    svnUrl           String?
+    homepage         String?
+    language         String?
+    forksCount       Int?
+    stargazersCount  Int?
+    watchersCount    Int?
+    watchers         Int?
+    size             Int?
+    defaultBranch    String
+    openIssuesCount  Int?
+    openIssues       Int?
+    isTemplate       Boolean @default(false)
+    topics           Json? // JSON array
+    hasIssues        Boolean @default(true)
+    hasProjects      Boolean @default(true)
+    hasWiki          Boolean @default(true)
+    hasPages         Boolean @default(false)
+    hasDownloads     Boolean @default(true)
+    hasDiscussions   Boolean @default(false)
+    archived         Boolean @default(false)
+    disabled         Boolean @default(false)
+    visibility       String  @default("public") // public, private, internal
+    // Integer timestamps (for compatibility with legacy code)
+    createdAt        Int
+    updatedAt        Int?
+    pushedAt         Int?
+
+    // Permissions (for user repos)
+    permissions Json? // JSON object: {admin: bool, maintain: bool, push: bool, triage: bool, pull: bool}
+
+    // Organization-specific fields
+    allowForking             Boolean?
+    webCommitSignoffRequired Boolean?
+
+    // License information
+    licenseSpdxId String?
+    licenseName   String?
+    licenseKey    String?
+    licenseUrl    String?
+    licenseNodeId String?
+
+    // Security and analysis
+    securityAndAnalysis Json? // JSON object
+
+    // Network info
+    networkCount     Int?
+    subscribersCount Int?
+
+    // Fork parent information
+    parentFullName String? // Full name of the parent repository if this is a fork
+    parentHtmlUrl  String? // HTML URL of the parent repository
+
+    // Internal tracking
+    source       String // 'github-app', 'github-pat', 'github-oauth', 'vvd'
+    importedAt   Int // When first imported to Vulnetix
+    lastSyncedAt Int // Last time synced with GitHub
+
+    // Package ecosystem information
+    packageEcosystem String? // Detected package ecosystem: go, rubygems, npm, cargo, maven, pypi, nuget, or generic
+    packageName      String? // Package name from Google OSI or CVE data
+    packageVersion   String? // Primary/latest package version from Google OSI
+    purl             String? // Package URL (PURL) for the repository's primary package
+
+    // Many-to-many relations (all via junction tables)
+    branches          GitHubBranch[]
+    contributors      GitHubRepoContributor[]
+    languages         GitHubRepoLanguage[]
+    packageManagers   GitHubRepoPackageManager[]
+    dependencies      GitHubRepoDependency[]
+    openssfScorecards OpenSSFScorecard[]
+
+    @@index([ownerType, userId])
+    @@index([ownerType, organizationId])
+    @@index([fullName])
+    @@index([visibility])
+    @@index([source])
+    @@index([parentFullName])
+}
+
+enum GitHubOwnerType {
+    User         @map("User")
+    Organization @map("Organization")
+}
+
+model GitHubBranch {
+    name               String
+    githubRepositoryId Int
+    githubRepository   GitHubRepository @relation(fields: [githubRepositoryId], references: [id])
+    commitSha          String
+    protected          Int              @default(0)
+    monitored          Int              @default(0)
+
+    @@unique([githubRepositoryId, name])
+}
+
+model Dependency {
+    key              String                     @id
+    name             String
+    version          String
+    license          String?
+    packageEcosystem String?
+    isDev            Int                        @default(0)
+    isDirect         Int                        @default(0)
+    isIndirect       Int                        @default(0)
+    isTransitive     Int                        @default(0)
+    isShared         Int                        @default(0)
+    isPeer           Int                        @default(0)
+    childOfKey       String?
+    childOf          Dependency?                @relation("dependsOn", fields: [childOfKey], references: [key])
+    dependencies     Dependency[]               @relation("dependsOn")
+    repoDependencies GitHubRepoDependency[]
+    // Google OSI enrichment fields
+    publishedAt      Int? // Unix timestamp when package was published
+    slsaProvenances  DependencySLSAProvenance[]
+    attestations     DependencyAttestation[]
+}
+
+// SLSA Provenance data for package dependencies (from Google OSI / deps.dev)
+model DependencySLSAProvenance {
+    uuid             String     @id @default(uuid())
+    dependencyKey    String
+    dependency       Dependency @relation(fields: [dependencyKey], references: [key])
+    sourceRepository String
+    commit           String
+    url              String
+    verified         Int        @default(0) // 0 = false, 1 = true
+    createdAt        Int
+
+    @@index([dependencyKey])
+}
+
+// Attestation data for package dependencies (from Google OSI / deps.dev)
+model DependencyAttestation {
+    uuid             String     @id @default(uuid())
+    dependencyKey    String
+    dependency       Dependency @relation(fields: [dependencyKey], references: [key])
+    type             String // e.g., "https://slsa.dev/provenance/v1"
+    url              String
+    verified         Int        @default(0) // 0 = false, 1 = true
+    sourceRepository String?
+    commit           String?
+    createdAt        Int
+
+    @@index([dependencyKey])
+    @@index([type])
+}
+
+// Junction table for GitHubRepository <-> Dependencies (many-to-many)
+model GitHubRepoDependency {
+    id                 Int                       @id @default(autoincrement())
+    githubRepositoryId Int
+    githubRepository   GitHubRepository          @relation(fields: [githubRepositoryId], references: [id])
+    orgId              String
+    dependencyKey      String
+    dependency         Dependency                @relation(fields: [dependencyKey], references: [key])
+    packageManagerId   String?
+    packageManager     GitHubRepoPackageManager? @relation(fields: [packageManagerId], references: [uuid])
+    manifestFile       String? // Direct reference to source file
+    source             String
+    detectedAt         Int
+    version            String?
+    scope              String?
+    isDirect           Int                       @default(0)
+    isIndirect         Int                       @default(0)
+    isTransitive       Int                       @default(0)
+    isDev              Int                       @default(0)
+    isLocked           Int?
+    createdAt          Int
+    updatedAt          Int
+
+    @@unique([githubRepositoryId, dependencyKey, source], name: "repo_dependency_source_unique")
+    @@index([githubRepositoryId])
+    @@index([dependencyKey])
+    @@index([packageManagerId])
+    @@index([source])
+    @@index([orgId])
+}
+
+model CVEMetadataReferences {
+    uuid              String      @id @default(uuid())
+    cveId             String
+    source            String
+    cveMetadata       CVEMetadata @relation(fields: [cveId, source], references: [cveId, source])
+    url               String
+    type              String
+    referenceSource   String
+    title             String?
+    createdAt         Int
+    httpStatus        Int?
+    deadLinkCheckedAt Int?
+    deadLink          Int?        @default(0) // 0 = not checked, 1 = dead, 2 = alive
+
+    // GitHub PR Enrichment Fields
+    prDiffUrl        String? // URL to the PR diff
+    prState          String? // PR state (open, closed, merged)
+    prAuthor         String? // GitHub username of PR author
+    prLabels         Json? // JSON array of PR labels
+    prMergedAt       Int? // Unix timestamp when PR was merged
+    prMergeCommitSha String? // SHA of the merge commit
+    prRepoHealth     Json? // JSON object with repo health metrics
+
+    // GitHub Commit Enrichment Fields
+    commitAuthorEmail String? // Commit author email
+    commitAuthorLogin String? // GitHub username of commit author (also used for Gist owner.login)
+    commitVerified    Int? // 0 = false, 1 = true (verified commit signature)
+    commitHealth      Json? // JSON object with commit health metrics
+
+    // GitHub Gist Enrichment Fields
+    gistId         String? // Gist ID
+    gistPublic     Int? // 0 = private, 1 = public
+    gistFilesCount Int? // Number of files in the gist
+    gistFiles      Json? // JSON array of file names
+    gistComments   Int? // Number of comments on the gist
+    gistUpdatedAt  Int? // Unix timestamp when gist was last updated
+
+    // ExploitDB Enrichment Fields
+    exploitDbId       String? // ExploitDB ID
+    exploitDbAuthor   String? // Exploit author
+    exploitDbDate     Int? // Unix timestamp of exploit publication
+    exploitDbPlatform String? // Target platform (e.g., linux, windows, webapps)
+    exploitDbType     String? // Exploit type (e.g., remote, local, dos)
+    exploitDbPort     Int? // Target port number (if applicable)
+    exploitDbVerified Int? // 0 = false, 1 = true (verified exploit)
+
+    // VulnerabilityLab Enrichment Fields
+    vlId                    String? // VulnerabilityLab exploit ID
+    vlTitle                 String? // Document title
+    vlCreatedAt             Int? // Release date or earliest timeline date
+    vlUpdatedAt             Int? // Latest disclosure/patch date
+    vlExploitationTechnique String? // Remote, Local, etc.
+    vlAuthenticationType    String? // Auth requirements
+    vlUserInteraction       String? // User interaction level
+    vlAuthor                String? // Credits & Authors
+
+    // Nuclei Template Enrichment Fields (ProjectDiscovery)
+    commitSha            String? // SHA of the commit containing the Nuclei template
+    commitAuthorName     String? // Full name of commit author
+    commitCommitterName  String? // Full name of commit committer
+    commitCommitterEmail String? // Email of commit committer
+    commitMessage        String? // Commit message
+    commentCount         Int? // Number of comments on the commit
+    nucleiPath           String? // File path of the Nuclei template in the repository
+
+    @@index([cveId, source])
+    @@index([cveId])
+    @@index([type])
+    @@index([deadLink])
+    @@index([prState])
+    @@index([commitVerified])
+    @@index([exploitDbId])
+    @@index([exploitDbVerified])
+    @@index([vlId])
+    @@index([commitSha])
+    @@index([nucleiPath])
+    @@index([referenceSource])
+}
+
+model CVEMetadata {
+    cveId                String                  @map("cveId")
+    source               String                  @map("source")
+    dataVersion          String                  @map("dataVersion")
+    state                String                  @map("state")
+    datePublished        Int                     @map("datePublished")
+    dateUpdated          Int?                    @map("dateUpdated")
+    dateReserved         Int?                    @map("dateReserved")
+    vectorString         String?                 @map("vectorString") // Deprecated: use metrics table
+    title                String?                 @map("title")
+    sourceAdvisoryRef    String?                 @map("sourceAdvisoryRef")
+    affectedVendor       String?                 @map("affectedVendor") // Deprecated: use affected table
+    affectedProduct      String?                 @map("affectedProduct") // Deprecated: use affected table
+    affectedVersionsJSON Json?                   @map("affectedVersionsJSON") // Deprecated: use affected table
+    cpesJSON             Json?                   @map("cpesJSON") // Deprecated: use affected table
+    cnaOrgId             String?                 @map("cnaOrgId")
+    cna                  CVENumberingAuthority?  @relation(fields: [cnaOrgId], references: [orgId])
+    rawFilePath          String?                 @map("rawFilePath")
+    lastFetchedAt        Int                     @map("lastFetchedAt")
+    lastEnriched         Int?                    @map("lastEnriched")
+    fetchCount           Int                     @default(1) @map("fetchCount")
+    isMaliciousPackage   Int?                    @default(0) @map("isMaliciousPackage") // 0 = false, 1 = true (OpenSSF malicious package)
+    rawDataJSON          Json?                   @map("rawDataJSON")
+    adp                  CVEADP[]
+    references           CVEMetadataReferences[]
+    problemTypes         CVEProblemType[] // CWE and other problem classifications
+    metrics              CVEMetric[] // CVSS and other scoring metrics
+    affected             CVEAffected[] // Affected products, versions, and platforms
+    descriptions         CVEDescription[] // Multiple descriptions with language support
+    impacts              CVEImpact[] // CAPEC-based impact scenarios (CNA and ADP)
+    // Self-referencing many-to-many alias relations
+    primaryAliases       CVEAlias[]              @relation("PrimaryAlias") // CVEs that this is primary for
+    aliasedBy            CVEAlias[]              @relation("AliasOf") // CVEs that alias this one
+    aiLogs               PixLog[]
+    // OpenSSF Scorecard relation (optional - not all packages have GitHub source)
+    scorecardUuid        String?                 @map("scorecardUuid")
+    scorecard            OpenSSFScorecard?       @relation(fields: [scorecardUuid], references: [uuid])
+    // GCVE issuance records for Vulnetix-sourced vulnerabilities
+    gcveIssuances        GcveIssuance[]
+    // CrowdSec honeypot sightings for this CVE
+    crowdSecSightings    CrowdSecSighting[]
+    // VulnCheck KEV associations
+    vulnCheckKevCves     VulnCheckKEVCVE[]
+
+    @@id([cveId, source])
+    @@index([cveId])
+    @@index([datePublished])
+    @@index([lastFetchedAt])
+    @@index([lastEnriched])
+    @@index([scorecardUuid])
+    @@index([isMaliciousPackage])
+    @@index([source, datePublished])
+}
+
+// CVE Alias junction table for many-to-many self-relation
+// Establishes bidirectional alias relationships between CVEMetadata records
+model CVEAlias {
+    primaryCveId   String
+    primarySource  String
+    primaryCve     CVEMetadata @relation("PrimaryAlias", fields: [primaryCveId, primarySource], references: [cveId, source], onDelete: Cascade, onUpdate: Cascade)
+    aliasCveId     String
+    aliasSource    String
+    aliasCve       CVEMetadata @relation("AliasOf", fields: [aliasCveId, aliasSource], references: [cveId, source], onDelete: Cascade, onUpdate: Cascade)
+    discoveredAt   Int // When this alias relationship was discovered
+    discoveredFrom String // Source that reported this alias (osv, cve.org, github, etc.)
+
+    @@id([primaryCveId, primarySource, aliasCveId, aliasSource])
+    @@index([primaryCveId, primarySource])
+    @@index([aliasCveId, aliasSource])
+    @@index([primaryCveId])
+    @@index([aliasCveId])
+}
+
+model CVENumberingAuthority {
+    orgId     String        @id
+    shortName String
+    cves      CVEMetadata[]
+}
+
+model CVEADP {
+    cve    CVEMetadata             @relation(fields: [cveId, source], references: [cveId, source])
+    cveId  String
+    source String
+    adp    AuthorizedDataPublisher @relation(fields: [adpId], references: [orgId])
+    adpId  String
+
+    @@id([cveId, source, adpId])
+}
+
+model AuthorizedDataPublisher {
+    orgId     String   @id
+    shortName String
+    title     String
+    cves      CVEADP[]
+}
+
+// CVE Problem Types (CWE and other classifications)
+model CVEProblemType {
+    uuid            String      @id @default(uuid())
+    cveId           String
+    source          String
+    cveMetadata     CVEMetadata @relation(fields: [cveId, source], references: [cveId, source])
+    containerType   String // "cna" or "adp"
+    adpOrgId        String? // If containerType is "adp", which ADP
+    cweId           String? // e.g., "CWE-79"
+    description     String // Problem type description
+    descriptionType String      @default("text") // "text", "CWE", "other"
+    lang            String      @default("en") // Language code
+    createdAt       Int
+
+    @@index([cveId, source])
+    @@index([cveId])
+    @@index([cweId])
+    @@index([containerType])
+}
+
+// CVE Metrics (CVSS and other scoring systems)
+model CVEMetric {
+    uuid          String      @id @default(uuid())
+    cveId         String
+    source        String
+    cveMetadata   CVEMetadata @relation(fields: [cveId, source], references: [cveId, source])
+    containerType String // "cna" or "adp"
+    adpOrgId      String? // If containerType is "adp", which ADP
+    metricType    String // "cvssV2_0", "cvssV3_0", "cvssV3_1", "cvssV4_0", "ssvc", "other"
+    vectorString  String? // CVSS vector string
+    baseScore     Float? // Base score (0.0-10.0)
+    baseSeverity  String? // "NONE", "LOW", "MEDIUM", "HIGH", "CRITICAL"
+    metricFormat  String? // Scoring format identifier
+    scenariosJSON Json? // JSON array of scenarios with this metric
+    otherType     String? // For "other" metricType, the custom type name
+    otherContent  Json? // For "other" metricType, JSON content
+    createdAt     Int
+
+    @@unique([cveId, source, containerType, adpOrgId, metricType, vectorString])
+    @@index([cveId, source])
+    @@index([cveId])
+    @@index([containerType])
+    @@index([metricType])
+    @@index([baseScore])
+}
+
+// CVE Affected Products and Versions
+model CVEAffected {
+    uuid            String               @id @default(uuid())
+    cveId           String
+    source          String
+    cveMetadata     CVEMetadata          @relation(fields: [cveId, source], references: [cveId, source])
+    containerType   String // "cna" or "adp"
+    adpOrgId        String? // If containerType is "adp", which ADP
+    vendor          String? // Vendor name
+    product         String? // Product name
+    collectionURL   String? // Alternative to vendor+product
+    packageName     String? // Package name for package-based
+    affectedHash    String // MD5 hash of vendor|product|collectionURL|packageName for uniqueness
+    cpes            Json? // JSON array of CPE strings
+    modules         Json? // JSON array of affected modules
+    programFiles    Json? // JSON array of affected program files
+    programRoutines Json? // JSON array of affected routines/functions
+    platforms       Json? // JSON array of affected platforms
+    repo            String? // Repository URL
+    defaultStatus   String? // "affected", "unaffected", "unknown"
+    versions        CVEAffectedVersion[]
+    createdAt       Int
+
+    @@unique([cveId, source, containerType, affectedHash])
+    @@index([cveId, source])
+    @@index([cveId])
+    @@index([containerType])
+    @@index([vendor])
+    @@index([product])
+    @@index([affectedHash])
+}
+
+// CVE Affected Versions (detailed version information)
+model CVEAffectedVersion {
+    uuid            String      @id @default(uuid())
+    affectedId      String
+    affected        CVEAffected @relation(fields: [affectedId], references: [uuid])
+    version         String // Specific version number
+    status          String // "affected", "unaffected"
+    versionType     String? // "semver", "custom", etc.
+    lessThan        String? // For range: version < this
+    lessThanOrEqual String? // For range: version <= this
+    changes         Json? // JSON array of version status changes
+    createdAt       Int
+
+    @@index([affectedId])
+    @@index([version])
+    @@index([status])
+}
+
+// Package Version Registry Tracking (for patch intelligence)
+model PackageVersion {
+    uuid           String @id @default(uuid())
+    ecosystem      String // npm, pypi, maven, rubygems, cargo, go, nuget
+    packageName    String // Normalized package name
+    version        String // Specific version string
+    discoveredFrom String // "deps.dev", "registry.npmjs.org", etc.
+    discoveredAt   Int // Unix timestamp when first seen
+    lastVerifiedAt Int? // Unix timestamp when last verified
+    createdAt      Int
+    updatedAt      Int?
+
+    // Relationships
+    affectedByCves PackageVersionCVE[] @relation("affectedBy")
+    fixesCves      PackageVersionCVE[] @relation("fixes")
+
+    @@unique([ecosystem, packageName, version])
+    @@index([ecosystem, packageName])
+    @@index([discoveredAt])
+    @@index([lastVerifiedAt])
+}
+
+// Track which CVEs affect/fix which package versions
+model PackageVersionCVE {
+    uuid             String          @id @default(uuid())
+    packageVersionId String
+    packageVersion   PackageVersion  @relation("affectedBy", fields: [packageVersionId], references: [uuid])
+    cveId            String
+    relationshipType String // "affected", "fixed", "unaffected"
+    determinedBy     String // "cve_data", "registry_inference", "deps.dev"
+    confidence       String // "high", "medium", "low"
+    versionRange     String? // e.g., ">= 1.0.0 < 2.0.0"
+    fixedVersionId   String?
+    fixedVersion     PackageVersion? @relation("fixes", fields: [fixedVersionId], references: [uuid])
+    createdAt        Int
+
+    @@unique([packageVersionId, cveId, relationshipType])
+    @@index([cveId])
+    @@index([packageVersionId])
+    @@index([relationshipType])
+    @@index([fixedVersionId])
+}
+
+// CVE Descriptions (multi-language support)
+model CVEDescription {
+    uuid            String      @id @default(uuid())
+    cveId           String
+    source          String
+    cveMetadata     CVEMetadata @relation(fields: [cveId, source], references: [cveId, source])
+    containerType   String // "cna" or "adp"
+    adpOrgId        String? // If containerType is "adp", which ADP
+    lang            String      @default("en") // Language code (en, es, fr, etc.)
+    value           String // Description text (can be long)
+    supportingMedia Json? // JSON array of supporting media references
+    createdAt       Int
+
+    @@index([cveId, source])
+    @@index([cveId])
+    @@index([lang])
+    @@index([containerType])
+}
+
+// CVE Impact Information (CAPEC-based impact scenarios)
+model CVEImpact {
+    uuid          String      @id @default(uuid())
+    cveId         String
+    source        String
+    cveMetadata   CVEMetadata @relation(fields: [cveId, source], references: [cveId, source])
+    containerType String // "cna" or "adp"
+    adpOrgId      String? // If containerType is "adp", which ADP
+    capecId       String? // CAPEC ID (e.g., "CAPEC-123")
+    createdAt     Int
+
+    // Multi-language descriptions via related table
+    descriptions CVEImpactDescription[]
+
+    @@index([cveId, source])
+    @@index([cveId])
+    @@index([containerType])
+    @@index([capecId])
+}
+
+// CVE Impact Descriptions (multi-language support for impact scenarios)
+model CVEImpactDescription {
+    uuid      String    @id @default(uuid())
+    impactId  String
+    impact    CVEImpact @relation(fields: [impactId], references: [uuid])
+    lang      String    @default("en") // Language code (en, es, fr, etc.)
+    value     String // Impact description text (max 4096 chars per schema)
+    createdAt Int
+
+    @@index([impactId])
+    @@index([lang])
+}
+
+model GcveIssuance {
+    gcveId         String      @id // Full GCVE identifier (e.g., "GCVE-VVD-2025-0001")
+    cveId          String      @map("cveId") // Primary CVE identifier
+    source         String      @map("source") // Source of CVE data (e.g., "Vulnetix")
+    cveMetadata    CVEMetadata @relation(fields: [cveId, source], references: [cveId, source])
+    datePublished  Int         @map("datePublished") // Unix timestamp when GCVE was issued
+    year           Int         @map("year") // Publication year
+    sequenceNumber Int         @map("sequenceNumber") // Sequence number within the year
+    r2Bucket       String?     @map("r2Bucket") // R2 bucket where CVEListv5 data is stored
+    r2Key          String?     @map("r2Key") // R2 object key/path
+    createdAt      Int         @map("createdAt") // Unix timestamp when record was created
+    updatedAt      Int?        @map("updatedAt") // Unix timestamp when record was last updated
+
+    // Relations to collect all aliases for this GCVE
+    aliases GcveAlias[]
+
+    @@index([cveId, source])
+    @@index([cveId])
+    @@index([year, sequenceNumber])
+    @@index([datePublished])
+}
+
+// Junction table to link GCVE identifiers with all their aliases
+model GcveAlias {
+    gcveId       String       @map("gcveId") // GCVE identifier
+    gcveIssuance GcveIssuance @relation(fields: [gcveId], references: [gcveId], onDelete: Cascade)
+    aliasCveId   String       @map("aliasCveId") // Alias CVE/identifier
+    aliasSource  String       @map("aliasSource") // Source of the alias
+    createdAt    Int          @map("createdAt") // When this alias was added
+
+    @@id([gcveId, aliasCveId, aliasSource])
+    @@index([gcveId])
+    @@index([aliasCveId, aliasSource])
+}
+
+// Junction table for GitHubRepository <-> Contributors (many-to-many)
+model GitHubRepoContributor {
+    id                 Int              @id @default(autoincrement())
+    githubRepositoryId Int
+    githubRepository   GitHubRepository @relation(fields: [githubRepositoryId], references: [id])
+    githubId           Int
+    login              String
+    avatarUrl          String?
+    type               String
+    siteAdmin          Int              @default(0)
+    contributions      Int
+    createdAt          Int
+    updatedAt          Int
+
+    @@unique([githubRepositoryId, githubId])
+    @@index([githubRepositoryId])
+    @@index([githubId])
+}
+
+model Languages {
+    uuid        String               @id @default(uuid())
+    displayName String
+    slug        String               @unique
+    githubId    String?
+    repos       GitHubRepoLanguage[]
+}
+
+// Junction table for GitHubRepository <-> Languages (many-to-many)
+model GitHubRepoLanguage {
+    id                 Int              @id @default(autoincrement())
+    githubRepositoryId Int
+    githubRepository   GitHubRepository @relation(fields: [githubRepositoryId], references: [id])
+    languageUuid       String
+    language           Languages        @relation(fields: [languageUuid], references: [uuid])
+    bytes              Int              @default(0)
+    lastUpdated        Int              @default(0)
+
+    @@unique([githubRepositoryId, languageUuid])
+    @@index([githubRepositoryId])
+    @@index([languageUuid])
+}
+
+// Junction table for GitHubRepository <-> PackageManager (many-to-many)
+model GitHubRepoPackageManager {
+    uuid               String                 @id @default(uuid())
+    githubRepositoryId Int
+    githubRepository   GitHubRepository       @relation(fields: [githubRepositoryId], references: [id])
+    orgId              String
+    packageType        String // npm, yarn, pip, poetry, go, cargo, etc.
+    manifestFile       String // Path to manifest file (package.json, Cargo.toml, etc.)
+    lockFile           String? // Path to lock file if exists (package-lock.json, Cargo.lock, etc.)
+    version            String? // Package manager version if detectable
+    detectedAt         Int
+    lastScanned        Int
+    metadata           Json? // Additional package manager specific data as JSON
+    dependencies       GitHubRepoDependency[]
+    createdAt          Int
+    updatedAt          Int
+
+    @@unique([githubRepositoryId, packageType, manifestFile])
+    @@index([githubRepositoryId])
+    @@index([packageType])
+    @@index([orgId])
+}
+
+model Pix {
+    uuid              String   @id @default(uuid())
+    createdAt         Int
+    activityKey       String
+    enabled           Int      @default(1)
+    provider          String?
+    responseMaxTokens Int?
+    temperature       Float?
+    topP              Float?
+    topK              Float?
+    repetitionPenalty Float?
+    frequencyPenalty  Float?
+    presencePenalty   Float?
+    inferenceModel    String?
+    embeddingModel    String?
+    systemPromptText  String?
+    assistantPrompt   String?
+    costInput         Float? // per M input tokens
+    costOutput        Float? // per M output tokens
+    logs              PixLog[]
+}
+
+model PixLog {
+    uuid              String       @id @default(uuid())
+    createdAt         Int
+    vulnId            String? // CVEMetadata cveId
+    vulnSource        String? // CVEMetadata source
+    vuln              CVEMetadata? @relation(fields: [vulnId, vulnSource], references: [cveId, source])
+    pixUuid           String
+    pix               Pix          @relation(fields: [pixUuid], references: [uuid])
+    provider          String?
+    responseMaxTokens Int?
+    temperature       Float?
+    topP              Float?
+    topK              Float?
+    repetitionPenalty Float?
+    frequencyPenalty  Float?
+    presencePenalty   Float?
+    inferenceModel    String?
+    embeddingModel    String?
+    systemPromptText  String?
+    userPrompt        String?
+    assistantPrompt   String?
+    responseText      String?
+    promptTokens      Int?
+    completionTokens  Int?
+    totalTokens       Int?
+    originalResponse  String?
+    reviewed          Int          @default(0)
+    reviewedBy        String?
+    rejected          Int          @default(0)
+
+    @@index([vulnId, vulnSource])
+}
+
+model EpssScore {
+    id           Int     @id @default(autoincrement())
+    cve          String // CVE identifier (e.g., CVE-2022-25204)
+    dateString   String // Calendar date in YYYY-MM-DD format (UTC)
+    score        Float // EPSS score (0.0 to 1.0)
+    percentile   Float // EPSS percentile (0.0 to 1.0)
+    fetchedAt    Int // Unix timestamp when data was fetched
+    modelVersion String? // EPSS model version
+    createdAt    Int // Unix timestamp when record was created
+
+    @@unique([cve, dateString], name: "cve_dateString")
+    @@index([cve])
+    @@index([dateString])
+    @@index([fetchedAt])
+}
+
+model CessScore {
+    id                               Int     @id @default(autoincrement())
+    cve                              String // CVE identifier (e.g., CVE-2022-25204)
+    dateString                       String // Calendar date in YYYY-MM-DD format (UTC)
+    timelineDate                     Int // Timeline date as Unix timestamp (converted from API ISO 8601 timestamp)
+    score                            Float // CESS score (0.0 to 10.0, derived from probability_exploit_usage * 10)
+    probabilityExploitUsage          Float // Raw probability value (0.0 to 1.0)
+    probabilityExploitUsageVariation Float? // Variation in probability
+    fetchedAt                        Int // Unix timestamp when data was fetched
+    modelVersion                     String? // CESS model version
+    createdAt                        Int // Unix timestamp when record was created
+    latestEntry                      Int     @default(0) // 1 if this is the latest entry, 0 otherwise
+
+    @@index([cve, dateString])
+    @@index([cve])
+    @@index([dateString])
+    @@index([fetchedAt])
+    @@index([latestEntry])
+}
+
+model CrowdSecLog {
+    uuid         String             @id @default(uuid())
+    r2Path       String // Path to JSON file in R2: /crowdsec/YYYYMMDD/uuid.jsonc
+    url          String // CrowdSec API URL used for this fetch
+    cveId        String? // CVE ID searched (null for scheduled runs with no CVE)
+    httpStatus   Int? // HTTP response status code
+    errorMessage String? // Error message if non-JSON response or API failure
+    totalItems   Int                @default(0) // Count of items in the response
+    createdAt    Int // Unix timestamp when log was created
+    sightings    CrowdSecSighting[]
+
+    @@index([r2Path])
+    @@index([cveId])
+    @@index([createdAt])
+    @@index([httpStatus])
+}
+
+model CrowdSecSighting {
+    uuid                         String      @id @default(uuid())
+    crowdSecLogUuid              String
+    crowdSecLog                  CrowdSecLog @relation(fields: [crowdSecLogUuid], references: [uuid], onDelete: Cascade)
+    cveId                        String
+    source                       String      @default("vvd")
+    cveMetadata                  CVEMetadata @relation(fields: [cveId, source], references: [cveId, source], onDelete: Cascade)
+    ip                           String
+    reputation                   String?
+    confidence                   String?
+    backgroundNoiseScore         Int?
+    asName                       String?
+    asNum                        Int?
+    ipRange24                    String?
+    ipRange24Reputation          String?
+    ipRange24Score               Int?
+    locationCountry              String?
+    locationCity                 String?
+    locationLat                  Float?
+    locationLon                  Float?
+    reverseDns                   String?
+    behaviorsCsv                 String? // CSV of behavior names
+    attackDetailsCsv             String? // CSV of attack detail names
+    classificationsCsv           String? // CSV of classification names
+    mitreTechniquesCsv           String? // CSV of MITRE technique names
+    targetCountriesJSON          Json? // JSON object of target countries
+    firstSeen                    Int? // Unix timestamp from history
+    lastSeen                     Int? // Unix timestamp from history
+    falsePositivesCount          Int         @default(0) // Length of classifications.false_positives[]
+    scoreLastDayAggressiveness   Int?
+    scoreLastDayThreat           Int?
+    scoreLastDayTrust            Int?
+    scoreLastWeekAggressiveness  Int?
+    scoreLastWeekThreat          Int?
+    scoreLastWeekTrust           Int?
+    scoreLastMonthAggressiveness Int?
+    scoreLastMonthThreat         Int?
+    scoreLastMonthTrust          Int?
+    createdAt                    Int // Unix timestamp when record was created
+    updatedAt                    Int // Unix timestamp when record was last updated
+
+    @@index([crowdSecLogUuid])
+    @@index([cveId, source])
+    @@index([ip])
+    @@index([reputation])
+    @@index([asNum])
+    @@index([locationCountry])
+    @@index([firstSeen])
+    @@index([lastSeen])
+    @@index([updatedAt])
+}
+
+model Kev {
+    cveID                      String
+    source                     String // "CISA", "Vulnetix", etc.
+    vendorProject              String
+    product                    String
+    vulnerabilityName          String
+    dateAdded                  Int // Unix timestamp (converted from YYYY-MM-DD)
+    shortDescription           String
+    requiredAction             String
+    dueDate                    Int // Unix timestamp (converted from YYYY-MM-DD)
+    knownRansomwareCampaignUse String? // "Known" or "Unknown"
+    notes                      String?
+    cwesJSON                   Json? // JSON array of CWE IDs (e.g., ["CWE-79", "CWE-89"])
+    fetchedAt                  Int // Unix timestamp when KEV data was fetched
+    catalogVersion             String? // KEV catalog version
+    catalogReleaseDate         Int? // Catalog release date as Unix timestamp
+    createdAt                  Int // Unix timestamp when record was created
+    updatedAt                  Int // Unix timestamp when record was last updated
+
+    @@id([cveID, source])
+    @@index([cveID])
+    @@index([source])
+    @@index([fetchedAt])
+    @@index([dateAdded])
+}
+
+// Track when bulk data dumps (CISA KEV, EPSS, CESS, etc.) were last processed
+// Prevents excessive re-processing of large data dumps that update infrequently
+model BulkDataDumpTracker {
+    source           String  @id // e.g., "vulncheck_kev", "vulncheck_nvd", "cisa_kev", "epss", "cess"
+    lastProcessedAt  Int // Unix timestamp of last successful processing
+    frequency        Int // Minimum seconds between processing runs (e.g., 3600 for hourly, 21600 for 6 hours)
+    createdAt        Int
+    updatedAt        Int
+    // VulnCheck KEV specific fields (optional for other sources)
+    filename         String? // Latest processed filename (e.g., "vulncheck-kev-1761471017470846002.zip")
+    sha256           String? // SHA256 hash of the latest processed file
+    dateAdded        Int? // Unix timestamp from VulnCheck API date_added field
+    // NIST NVD specific fields (optional for other sources)
+    lastModifiedDate String? // Last modified date from NVD META file (ISO 8601 format)
+    size             Int? // Uncompressed file size in bytes from META file
+    zipSize          Int? // Compressed ZIP file size from META file
+    gzSize           Int? // Compressed GZ file size from META file
+    totalCVEs        Int? // Total number of CVE records processed
+    totalReferences  Int? // Total number of reference records created
+    totalCWEs        Int? // Total number of CWE associations created
+
+    @@index([lastProcessedAt])
+}
+
+// Track individual files within VulnCheck NVD archives
+// Enables granular tracking and selective re-processing of specific files
+model VulnCheckNvdFile {
+    uuid                  String  @id @default(uuid())
+    archiveSha256         String // Links to BulkDataDumpTracker.sha256 for the parent archive
+    filename              String // Filename within archive (e.g., "nvd-2024-001.json.gz")
+    fileIndex             Int // Position in ZIP file (for ordering)
+    fileSha256            String? // SHA256 hash of the individual file (enables deduplication across archives)
+    processedAt           Int? // Unix timestamp when successfully processed (null if pending/failed)
+    status                String // "pending", "processing", "completed", "failed", "invalidated"
+    cveCount              Int     @default(0) // Number of CVE records processed from this file
+    errorMessage          String? // Error message if status is "failed"
+    r2Path                String? // Path to individual file in R2 (e.g., "vulncheck-nvd/files/{sha256}/{filename}")
+    r2StoredAt            Int? // Unix timestamp when file was stored to R2
+    queuedMessageCount    Int     @default(0) // Number of messages enqueued for this file
+    processedMessageCount Int     @default(0) // Number of messages successfully processed for this file
+    createdAt             Int // Unix timestamp when record was created
+    updatedAt             Int // Unix timestamp when record was last updated
+
+    @@unique([archiveSha256, filename])
+    @@index([archiveSha256])
+    @@index([status])
+    @@index([processedAt])
+    @@index([r2StoredAt])
+    @@index([fileSha256])
+}
+
+// Track individual files within GHSA (GitHub Security Advisory) archives
+// Enables granular tracking and selective re-processing of specific OSV-format JSON files
+model GhsaFile {
+    uuid                  String  @id @default(uuid())
+    archiveSha256         String // Links to BulkDataDumpTracker.sha256 for the parent archive
+    filename              String // Filename within archive (e.g., "GHSA-xxxx-xxxx-xxxx.json")
+    fileIndex             Int // Position in ZIP file (for ordering)
+    fileSha256            String? // SHA256 hash of the individual file (enables deduplication across archives)
+    processedAt           Int? // Unix timestamp when successfully processed (null if pending/failed)
+    status                String // "pending", "processing", "completed", "failed", "invalidated"
+    advisoryCount         Int     @default(0) // Number of GHSA advisories processed from this file
+    cveCount              Int     @default(0) // Number of CVE records processed from this file
+    errorMessage          String? // Error message if status is "failed"
+    r2Path                String? // Path to individual file in R2 (e.g., "ghsa/files/{sha256}/{filename}")
+    r2StoredAt            Int? // Unix timestamp when file was stored to R2
+    queuedMessageCount    Int     @default(0) // Number of messages enqueued for this file
+    processedMessageCount Int     @default(0) // Number of messages successfully processed for this file
+    createdAt             Int // Unix timestamp when record was created
+    updatedAt             Int // Unix timestamp when record was last updated
+
+    @@unique([archiveSha256, filename])
+    @@index([archiveSha256])
+    @@index([status])
+    @@index([processedAt])
+    @@index([r2StoredAt])
+    @@index([fileSha256])
+}
+
+// Track individual files within NIST NVD archives
+// Enables granular tracking and selective re-processing of specific CVE files
+model NistNvdFile {
+    uuid                  String  @id @default(uuid())
+    archiveSha256         String // Links to BulkDataDumpTracker.sha256 for the parent archive
+    filename              String // Filename within archive (e.g., "nvdcve-2024.json.gz")
+    fileIndex             Int // Position in ZIP file (for ordering)
+    fileSha256            String? // SHA256 hash of the individual file (enables deduplication across archives)
+    processedAt           Int? // Unix timestamp when successfully processed (null if pending/failed)
+    status                String // "pending", "ready", "processing", "completed", "failed", "invalidated"
+    cveCount              Int     @default(0) // Number of CVE records processed from this file
+    errorMessage          String? // Error message if status is "failed"
+    r2Path                String? // Path to individual file in R2 (e.g., "nist-nvd/files/{sha256}/{filename}")
+    r2StoredAt            Int? // Unix timestamp when file was stored to R2
+    queuedMessageCount    Int     @default(0) // Number of messages enqueued for this file
+    processedMessageCount Int     @default(0) // Number of messages successfully processed for this file
+    createdAt             Int // Unix timestamp when record was created
+    updatedAt             Int // Unix timestamp when record was last updated
+
+    @@unique([archiveSha256, filename])
+    @@index([archiveSha256])
+    @@index([status])
+    @@index([processedAt])
+    @@index([r2StoredAt])
+    @@index([fileSha256])
+}
+
+// Track individual files within VulnCheck KEV archives
+// Enables granular tracking and selective re-processing of KEV files
+model VulnCheckKevFile {
+    uuid                  String  @id @default(uuid())
+    archiveSha256         String // Links to BulkDataDumpTracker.sha256 for the parent archive
+    filename              String // Filename of the ZIP archive (e.g., "vulncheck-kev-123456789.zip")
+    fileIndex             Int     @default(0) // Always 0 since each ZIP contains single JSON file
+    fileSha256            String? // SHA256 hash of the extracted JSON file
+    processedAt           Int? // Unix timestamp when successfully processed (null if pending/failed)
+    status                String // "pending", "ready", "processing", "completed", "failed", "invalidated"
+    recordCount           Int     @default(0) // Number of KEV records processed from this file
+    errorMessage          String? // Error message if status is "failed"
+    r2Path                String? // Path to extracted file in R2 (e.g., "vulncheck-kev/files/{sha256}/data.json")
+    r2StoredAt            Int? // Unix timestamp when file was stored to R2
+    queuedMessageCount    Int     @default(0) // Number of messages enqueued for this file
+    processedMessageCount Int     @default(0) // Number of messages successfully processed for this file
+    createdAt             Int // Unix timestamp when record was created
+    updatedAt             Int // Unix timestamp when record was last updated
+
+    @@unique([archiveSha256, filename])
+    @@index([archiveSha256])
+    @@index([status])
+    @@index([processedAt])
+    @@index([r2StoredAt])
+    @@index([fileSha256])
+}
+
+// Track individual files within CISA KEV archives
+// Enables granular tracking and selective re-processing of KEV files
+model CisaKevFile {
+    uuid                  String  @id @default(uuid())
+    archiveSha256         String // Links to BulkDataDumpTracker.sha256 for the parent archive
+    filename              String // Filename (e.g., "known_exploited_vulnerabilities.json")
+    fileIndex             Int     @default(0) // Always 0 since it's a single JSON file
+    fileSha256            String? // SHA256 hash of the JSON file
+    processedAt           Int? // Unix timestamp when successfully processed (null if pending/failed)
+    status                String // "pending", "ready", "processing", "completed", "failed", "invalidated"
+    recordCount           Int     @default(0) // Number of KEV records processed from this file
+    errorMessage          String? // Error message if status is "failed"
+    r2Path                String? // Path to file in R2 (e.g., "cisa-kev/files/{sha256}/data.json")
+    r2StoredAt            Int? // Unix timestamp when file was stored to R2
+    queuedMessageCount    Int     @default(0) // Number of messages enqueued for this file
+    processedMessageCount Int     @default(0) // Number of messages successfully processed for this file
+    createdAt             Int // Unix timestamp when record was created
+    updatedAt             Int // Unix timestamp when record was last updated
+
+    @@unique([archiveSha256, filename])
+    @@index([archiveSha256])
+    @@index([status])
+    @@index([processedAt])
+    @@index([r2StoredAt])
+    @@index([fileSha256])
+}
+
+// Track individual files within MITRE CVE archives
+// Enables granular tracking and selective re-processing of CVE files from cvelistV5
+model MitreCveFile {
+    uuid                  String  @id @default(uuid())
+    archiveSha256         String // Links to BulkDataDumpTracker.sha256 for the parent archive (git commit SHA)
+    filename              String // Relative path in repository (e.g., "cves/2024/1xxx/CVE-2024-1234.json")
+    fileIndex             Int // Position in processing order
+    fileSha256            String? // SHA256 hash of the individual file
+    processedAt           Int? // Unix timestamp when successfully processed (null if pending/failed)
+    status                String // "pending", "ready", "processing", "completed", "failed", "invalidated"
+    cveCount              Int     @default(0) // Number of CVE records processed (typically 1)
+    errorMessage          String? // Error message if status is "failed"
+    r2Path                String? // Path to individual file in R2 (e.g., "mitre-cve/files/{sha256}/{filename}")
+    r2StoredAt            Int? // Unix timestamp when file was stored to R2
+    queuedMessageCount    Int     @default(0) // Number of messages enqueued for this file
+    processedMessageCount Int     @default(0) // Number of messages successfully processed for this file
+    createdAt             Int // Unix timestamp when record was created
+    updatedAt             Int // Unix timestamp when record was last updated
+
+    @@unique([archiveSha256, filename])
+    @@index([archiveSha256])
+    @@index([status])
+    @@index([processedAt])
+    @@index([r2StoredAt])
+    @@index([fileSha256])
+}
+
+// Track individual files within OSV (Open Source Vulnerabilities) archives
+// Enables granular tracking and selective re-processing of OSV-format JSON files
+model OsvFile {
+    uuid                  String  @id @default(uuid())
+    archiveSha256         String // Links to BulkDataDumpTracker.sha256 for the parent archive
+    filename              String // Filename within archive (e.g., "PyPI/PYSEC-2024-1234.json")
+    fileIndex             Int // Position in archive (for ordering)
+    fileSha256            String? // SHA256 hash of the individual file (enables deduplication across archives)
+    processedAt           Int? // Unix timestamp when successfully processed (null if pending/failed)
+    status                String // "pending", "ready", "processing", "completed", "failed", "invalidated"
+    ecosystem             String? // PyPI, npm, Go, Maven, OSV-Malicious-Packages, etc.
+    osvId                 String? // PYSEC-2024-1234, GHSA-xxxx-xxxx-xxxx, MAL-2024-xxxx, etc.
+    advisoryCount         Int     @default(0) // Number of OSV advisories processed from this file
+    cveCount              Int     @default(0) // Number of CVE records processed from this file
+    errorMessage          String? // Error message if status is "failed"
+    r2Path                String? // Path to individual file in R2 (e.g., "osv/files/{sha256}/{filename}")
+    r2StoredAt            Int? // Unix timestamp when file was stored to R2
+    queuedMessageCount    Int     @default(0) // Number of messages enqueued for this file
+    processedMessageCount Int     @default(0) // Number of messages successfully processed for this file
+    createdAt             Int // Unix timestamp when record was created
+    updatedAt             Int // Unix timestamp when record was last updated
+
+    @@unique([archiveSha256, filename])
+    @@index([archiveSha256])
+    @@index([status])
+    @@index([processedAt])
+    @@index([r2StoredAt])
+    @@index([fileSha256])
+    @@index([ecosystem])
+    @@index([osvId])
+}
+
+// EUVD (EU Vulnerability Database) Files - Paginated batches from EUVD API
+model EuvdFile {
+    uuid                  String  @id @default(uuid())
+    batchSha256           String // Links to BulkDataDumpTracker.sha256 for the parent batch download
+    filename              String // Filename for this page (e.g., "page-0042.json")
+    pageNumber            Int // Page number from API pagination (0-indexed)
+    fileSha256            String? // SHA256 hash of the individual file (enables deduplication)
+    processedAt           Int? // Unix timestamp when successfully processed (null if pending/failed)
+    status                String // "pending", "ready", "processing", "completed", "failed", "invalidated"
+    recordCount           Int     @default(0) // Number of EUVD records in this page
+    cveCount              Int     @default(0) // Number of CVE records processed from this file
+    errorMessage          String? // Error message if status is "failed"
+    r2Path                String? // Path to file in R2 (e.g., "euvd/files/{batchSha256}/page-0042.json")
+    r2StoredAt            Int? // Unix timestamp when file was stored to R2
+    queuedMessageCount    Int     @default(0) // Number of messages enqueued for this file
+    processedMessageCount Int     @default(0) // Number of messages successfully processed for this file
+    createdAt             Int // Unix timestamp when record was created
+    updatedAt             Int // Unix timestamp when record was last updated
+
+    @@unique([batchSha256, filename])
+    @@index([batchSha256])
+    @@index([status])
+    @@index([processedAt])
+    @@index([r2StoredAt])
+    @@index([fileSha256])
+    @@index([pageNumber])
+}
+
+// VulnCheck KEV (Known Exploited Vulnerabilities) - Curated list of actively exploited vulnerabilities
+model VulnCheckKEV {
+    uuid                                 String  @id @default(uuid())
+    vendorProject                        String?
+    product                              String?
+    shortDescription                     String?
+    vulnerabilityName                    String?
+    requiredAction                       String?
+    knownRansomwareCampaignUse           String?
+    reportedExploitedByVulnCheckCanaries Int     @default(0)
+    dateAdded                            Int
+    createdAt                            Int
+    r2Bucket                             String?
+    r2Key                                String?
+
+    cves                  VulnCheckKEVCVE[]
+    cwes                  VulnCheckKEVCWE[]
+    xdbExploits           VulnCheckXDB[]
+    reportedExploitations VulnCheckReportedExploitation[]
+
+    @@unique([vendorProject, product, vulnerabilityName])
+    @@index([dateAdded])
+    @@index([vendorProject])
+    @@index([product])
+}
+
+// Junction table for VulnCheckKEV <-> CVEMetadata (many-to-many)
+model VulnCheckKEVCVE {
+    uuid        String       @id @default(uuid())
+    kevUuid     String
+    kev         VulnCheckKEV @relation(fields: [kevUuid], references: [uuid])
+    cveId       String
+    source      String       @default("vvd")
+    cveMetadata CVEMetadata  @relation(fields: [cveId, source], references: [cveId, source])
+
+    @@unique([kevUuid, cveId, source])
+    @@index([cveId, source])
+    @@index([kevUuid])
+}
+
+// VulnCheck KEV CWE associations
+model VulnCheckKEVCWE {
+    uuid    String       @id @default(uuid())
+    kevUuid String
+    kev     VulnCheckKEV @relation(fields: [kevUuid], references: [uuid])
+    cweId   String
+
+    @@unique([kevUuid, cweId])
+    @@index([cweId])
+    @@index([kevUuid])
+}
+
+// VulnCheck XDB (Exploit Database) entries
+model VulnCheckXDB {
+    uuid        String       @id @default(uuid())
+    kevUuid     String
+    kev         VulnCheckKEV @relation(fields: [kevUuid], references: [uuid])
+    xdbId       String
+    xdbUrl      String
+    dateAdded   Int
+    exploitType String?
+    cloneSshUrl String
+    createdAt   Int
+
+    @@unique([kevUuid, xdbId])
+    @@index([xdbId])
+    @@index([exploitType])
+    @@index([kevUuid])
+}
+
+// VulnCheck Reported Exploitation records
+model VulnCheckReportedExploitation {
+    uuid      String       @id @default(uuid())
+    kevUuid   String
+    kev       VulnCheckKEV @relation(fields: [kevUuid], references: [uuid])
+    url       String
+    dateAdded Int
+    createdAt Int
+
+    @@unique([kevUuid, url])
+    @@index([dateAdded])
+    @@index([kevUuid])
+}
+
+// OpenSSF Scorecard - Security health metrics for repositories
+model OpenSSFScorecard {
+    uuid               String                  @id @default(uuid())
+    githubRepositoryId Int?
+    repository         GitHubRepository?       @relation(fields: [githubRepositoryId], references: [id])
+    date               Int // Unix timestamp when scorecard was produced (midnight UTC)
+    repositoryName     String // Source code repository name
+    repositoryCommit   String // Source code commit SHA
+    scorecardVersion   String // Version of Scorecard program used
+    scorecardCommit    String // Commit of Scorecard program used
+    overallScore       Float // Weighted average score (0-10, higher is better)
+    metadata           Json? // JSON array of additional metadata
+    createdAt          Int // Unix timestamp when record was created
+    checks             OpenSSFScorecardCheck[]
+    cveMetadata        CVEMetadata[] // CVEs linked to this scorecard
+
+    @@index([githubRepositoryId])
+    @@index([date])
+    @@index([createdAt])
+    @@index([overallScore])
+}
+
+// OpenSSF Scorecard Check - Individual security check results
+model OpenSSFScorecardCheck {
+    uuid             String           @id @default(uuid())
+    scorecardUuid    String
+    scorecard        OpenSSFScorecard @relation(fields: [scorecardUuid], references: [uuid])
+    name             String // Name of the check
+    shortDescription String // Brief description of the check
+    documentationUrl String // Link to detailed check documentation
+    score            Float // Score (0-10, higher is better; negative = check failed)
+    reason           String // Explanation for the score
+    details          Json? // JSON array of further details
+
+    @@index([scorecardUuid])
+    @@index([name])
+    @@index([score])
+}
+
+// Organization - Entity for API access management
+model Organization {
+    uuid                String            @id @default(uuid()) // used in place of AWS access key identifier
+    name                String // Organization name
+    email               String? // Optional contact email
+    secret              String // Secret key for AWS SigV4 authentication (generated server-side)
+    rateLimitPerMinute  Int               @default(5) // Rate limit per minute
+    maxRequestsPerWeek  Int               @default(1000) // Maximum requests per week
+    createdAt           Int // Unix timestamp when organization was created
+    updatedAt           Int // Unix timestamp when organization was last updated
+    isActive            Boolean           @default(true) // Whether organization is active
+    accessLogs          AccessLog[] // Access logs for this organization
+
+    @@index([name])
+    @@index([isActive])
+    @@index([createdAt])
+}
+
+// Access Log - Track all API requests for rate limiting and analytics
+model AccessLog {
+    uuid         String       @id @default(uuid())
+    orgId        String
+    organization Organization @relation(fields: [orgId], references: [uuid], onDelete: Cascade)
+    ip           String // Client IP address
+    userAgent    String? // Client User-Agent header
+    routePath    String // API route path accessed
+    method       String // HTTP method (GET, POST, etc.)
+    statusCode   Int // HTTP response status code
+    timestamp    Int // Unix timestamp of the request
+    responseTime Int? // Response time in milliseconds
+
+    @@index([orgId])
+    @@index([timestamp])
+    @@index([routePath])
+    @@index([orgId, timestamp]) // Compound index for rate limiting queries
+}
+
+model SSVCDecision {
+    uuid            String       @id @default(uuid())
+    cveId           String // CVE ID if applicable
+    methodology     String // e.g., "CISA Coordinator", "AI/LLM Triage", "Deployer", "Supplier"
+    methodologyVer  String // Version of the methodology (e.g., "2.0.3", "1.0")
+    source          SSVCSource // Source of the decision: CISA_ADP, MANUAL, AUTOMATED, etc.
+    decisionOutcome String // Final decision value (e.g., "Act", "Track", "Track*", "Attend")
+    priority        SSVCPriority // Priority mapping: IMMEDIATE, HIGH, MEDIUM, LOW
+    optionsJSON     Json // JSON object of decision point options: {"Exploitation": "active", "Automatable": "yes", "Technical Impact": "total"}
+    timestamp       Int // Unix timestamp when decision was made
+    sourceDataJSON  Json? // Full source data (e.g., complete ADP container) for audit trail
+
+    @@index([methodology])
+    @@index([timestamp])
+    @@index([cveId])
+}
+
+enum SSVCPriority {
+    IMMEDIATE @map("immediate")
+    HIGH      @map("high")
+    MEDIUM    @map("medium")
+    LOW       @map("low")
+}
+
+enum SSVCSource {
+    CISA_ADP  @map("CISA-ADP")
+    MANUAL    @map("MANUAL")
+    AUTOMATED @map("AUTOMATED")
+    OSV       @map("OSV")
+    GITHUB    @map("GITHUB")
+    VULNCHECK @map("VULNCHECK")
+    CVE_ORG   @map("CVE.org")
+    OTHER     @map("OTHER")
+}
+
+// Scheduled Task Configuration - Manages enabled/disabled state and execution tracking
+model ScheduledTask {
+    name                 String  @id // Unique task identifier (matches TASK_SCHEDULES name)
+    description          String // Human-readable description of the task
+    cron                 String // Cron expression for reference
+    enabled              Int     @default(1) // 0 = disabled, 1 = enabled
+    lastExecutedAt       Int? // Unix timestamp of last execution (null if never executed)
+    executionCount       Int     @default(0) // Total number of times this task has been executed
+    lastExecutionSuccess Int? // 0 = failed, 1 = succeeded (null if never executed)
+    lastExecutionError   String? // Error message if last execution failed
+    createdAt            Int // Unix timestamp when task config was created
+    updatedAt            Int // Unix timestamp when task config was last updated
+
+    @@index([enabled])
+    @@index([lastExecutedAt])
+}
+
+// Queue Message Tracking - Manages decoupled processing of CVE/advisory records via Cloudflare Queues
+model QueueMessage {
+    id              String  @id @default(uuid())
+    messageId       String? // Cloudflare queue message ID (set when message is processed)
+    dataSource      String // Source identifier: "vulncheck-nvd", "nist-nvd", "ghsa", "cisa-kev", etc.
+    fileName        String // Name of the file being processed
+    recordIndex     Int // Index of the record within the file (for ordering and deduplication)
+    recordData      Json // Full record data (CVE, advisory, KEV entry, etc.) as JSON
+    status          String // "pending", "processing", "completed", "failed"
+    retryCount      Int     @default(0) // Number of times processing has been retried
+    error           String? // Error message if status is "failed"
+    enqueuedAt      Int // Unix timestamp when message was enqueued
+    processedAt     Int? // Unix timestamp when message was successfully processed (null if pending/failed)
+    metadata        Json? // Additional metadata (file SHA256, total records, etc.)
+    createdAt       Int // Unix timestamp when record was created
+    updatedAt       Int // Unix timestamp when record was last updated
+
+    @@unique([dataSource, fileName, recordIndex])
+    @@index([status])
+    @@index([dataSource])
+    @@index([fileName])
+    @@index([enqueuedAt])
+    @@index([processedAt])
+    @@index([messageId])
+}
