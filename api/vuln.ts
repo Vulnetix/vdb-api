@@ -8,14 +8,8 @@ import { Validator } from '@cfworker/json-schema'
 import type { PrismaClient } from '@prisma/client'
 import type { HonoEnv } from '@worker'
 import { Hono } from 'hono'
-import { jwtAuth } from '@/middleware/jwt-auth'
-import { rateLimitMiddleware } from '@/middleware/rate-limit'
 
 const app = new Hono<HonoEnv>()
-
-// Apply JWT authentication and rate limiting middleware to all routes
-app.use('/*', jwtAuth)
-app.use('/*', rateLimitMiddleware)
 
 // Load CVE Record Format schema and create validator
 const cveRecordSchema = require('@schemas/CVE_Record_Format.json')

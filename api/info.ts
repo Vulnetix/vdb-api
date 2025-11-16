@@ -2,17 +2,12 @@
  * CVE Information API
  * Provides unified CVE metadata and R2 file tracking across all data sources
  */
+import { PsqlClient } from '@/cache/psql-client'
 import type { PrismaClient } from '@prisma/client'
 import type { HonoEnv } from '@worker'
 import { Hono } from 'hono'
-import { jwtAuth } from '@/middleware/jwt-auth'
-import { rateLimitMiddleware } from '@/middleware/rate-limit'
 
 const app = new Hono<HonoEnv>()
-
-// Apply JWT authentication and rate limiting middleware to all routes
-app.use('/*', jwtAuth)
-app.use('/*', rateLimitMiddleware)
 
 /**
  * Data source configuration for R2 file matching
@@ -218,23 +213,20 @@ async function findEuvdR2File(prisma: PrismaClient, cveId: string) {
  */
 app.get('/:identifier', async (c) => {
     const prisma: PrismaClient = c.get('prisma')
+    const psql: PsqlClient = c.get('psql')
     const logger = c.get('logger')
-    const identifier = c.req.param('identifier').toUpperCase()
+    let cveId = c.req.param('identifier').toUpperCase()
 
     try {
         const startTime = Date.now()
 
-        // Normalize identifier to CVE format
-        let cveId = identifier
-        if (!cveId.startsWith('CVE-')) {
-            cveId = `CVE-${cveId}`
+        // Normalize identifier to GHSA format
+        if (cveId.startsWith('GHSA-')) {
+            cveId = cveId.toLowerCase()
         }
 
-        // TODO: Check KV cache first (cache_hit will be false for now)
-        const cacheHit = false
-
         // Query all CVEMetadata records for this CVE across all sources
-        const cveRecords = await prisma.cVEMetadata.findMany({
+        const cveRecords = await psql.findMany('CVEMetadata', {
             where: { cveId },
             include: {
                 references: true,
@@ -346,7 +338,7 @@ app.get('/:identifier', async (c) => {
             links.push({
                 type: 'page',
                 format: 'http',
-                url: `https://vdb.vulnetix.com/${identifier}`
+                url: `https://vdb.vulnetix.com/${cveId}`
             })
         }
 
@@ -363,9 +355,8 @@ app.get('/:identifier', async (c) => {
         })
 
         const response = {
-            _identifier: identifier,
+            _identifier: cveId,
             _timestamp: Math.floor(Date.now() / 1000),
-            cache_hit: cacheHit,
             matched,
             gcve: hasGcve,
             lastFetchedAt,
@@ -383,7 +374,7 @@ app.get('/:identifier', async (c) => {
         }
 
         logger.info('CVE info retrieved', {
-            identifier,
+            identifier: cveId,
             matched,
             sources: sources.length,
             duration: Date.now() - startTime

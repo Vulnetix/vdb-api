@@ -4,7 +4,7 @@
  */
 import type { Context, Next } from 'hono'
 import type { PrismaClient } from '@prisma/client'
-import type { HonoEnv, JWTPayload } from '@worker'
+import type { HonoEnv } from '@worker'
 
 /**
  * Calculate next Sunday at 00:00:00 UTC (week reset time)

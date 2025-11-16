@@ -15,14 +15,19 @@ import { createPsqlClient, type PsqlClient } from './src/cache/psql-client'
 
 // Import route handlers that actually exist
 import catchAllHandler from './api/[[catchall]]'
-import oasAPI from './api/oas'
-import swaggerUI from './api/swagger'
-import infoAPI from './api/info'
-import vulnAPI from './api/vuln'
-import exploitsAPI from './api/exploits'
 import authAPI from './api/auth'
+import ecosystemsAPI from './api/ecosystems'
+import exploitsAPI from './api/exploits'
+import infoAPI from './api/info'
+import oasAPI from './api/oas'
+import packageVersionsAPI from './api/package-versions'
+import packageVulnsAPI from './api/package-vulns'
+import productAPI from './api/product'
+import swaggerUI from './api/swagger'
+import vulnAPI from './api/vuln'
 
-import { authMiddleware } from './src/middleware/auth'
+import { jwtAuth } from './src/middleware/jwt-auth'
+import { rateLimitMiddleware } from './src/middleware/rate-limit'
 
 // Export JWTPayload type
 export interface JWTPayload {
@@ -80,8 +85,28 @@ app.use('*', async (c, next) => {
     await next()
 })
 
+// Public paths that don't require authentication or rate limiting
+const publicPaths = [
+    '/auth/token',
+    '/v1/spec',
+    '/v1/swagger',
+]
+
 // Authentication middleware - validates JWT sessions for protected routes
-app.use('*', authMiddleware)
+app.use('*', async (c, next) => {
+    if (publicPaths.includes(c.req.path)) {
+        return next()
+    }
+    return jwtAuth(c, next)
+})
+
+// Rate limiting middleware - applies to all routes except public paths
+app.use('*', async (c, next) => {
+    if (publicPaths.includes(c.req.path)) {
+        return next()
+    }
+    return rateLimitMiddleware(c, next)
+})
 
 // API Version 1 Routes
 // Mount OpenAPI specification route (public - no auth required)
@@ -96,6 +121,15 @@ app.route('/v1/vuln', vulnAPI)
 
 // Mount exploits API route (requires JWT auth and rate limiting)
 app.route('/v1/exploits', exploitsAPI)
+
+// Mount product/package API routes (requires JWT auth and rate limiting)
+app.route('/v1/product', productAPI)
+app.route('/v1/ecosystems', ecosystemsAPI)
+
+// Mount package-specific routes (requires JWT auth and rate limiting)
+// These handle /:package/versions and /:package/vulns
+app.route('/v1', packageVersionsAPI)
+app.route('/v1', packageVulnsAPI)
 
 // Mount authentication API route (public - used to GET JWT tokens)
 app.route('/auth', authAPI)

@@ -88,11 +88,11 @@ All API requests are logged for:
         },
         servers: [
             {
-                url: 'https://api.vdb.vulnetix.com',
+                url: 'https://api.vdb.vulnetix.com/v1',
                 description: 'Production VDB API Server'
             },
             {
-                url: 'http://127.0.0.1:8778',
+                url: 'http://127.0.0.1:8778/v1',
                 description: 'Local Development'
             }
         ],
@@ -1110,6 +1110,431 @@ Supports lookups by CVE ID (e.g., CVE-2024-1234) and other vulnerability identif
                         }
                     }
                 }
+            },
+            '/product/{name}': {
+                get: {
+                    summary: 'Get product information by package name',
+                    description: `Returns normalized product/package information with all versions and sources across all data tables.
+
+This endpoint searches the product index view (v_product_index) which aggregates data from:
+- GitHub Repositories (packageName, name)
+- CVE Affected Products (product, packageName)
+- Package Versions (packageName, ecosystem)
+- Dependencies (name, packageEcosystem)
+- CISA KEV (product)
+- VulnCheck KEV (product)
+- CVE Metadata (affectedProduct)
+- OpenSSF Scorecard (repositoryName)
+
+Results are paginated and include source attribution for each version.`,
+                    tags: ['Product/Package API'],
+                    security: [{ BearerAuth: [] }],
+                    parameters: [
+                        {
+                            name: 'name',
+                            in: 'path',
+                            required: true,
+                            schema: { type: 'string' },
+                            description: 'Package/product name (case-insensitive)',
+                            example: 'express'
+                        },
+                        {
+                            name: 'limit',
+                            in: 'query',
+                            required: false,
+                            schema: { type: 'integer', minimum: 1, maximum: 500, default: 100 },
+                            description: 'Maximum number of results per page (default: 100, max: 500)',
+                            example: 100
+                        },
+                        {
+                            name: 'offset',
+                            in: 'query',
+                            required: false,
+                            schema: { type: 'integer', minimum: 0, default: 0 },
+                            description: 'Number of results to skip for pagination (default: 0)',
+                            example: 0
+                        }
+                    ],
+                    responses: {
+                        '200': {
+                            description: 'Successful response with product information',
+                            content: {
+                                'application/json': {
+                                    schema: {
+                                        type: 'object',
+                                        required: ['packageName', 'timestamp', 'total', 'limit', 'offset', 'hasMore', 'versions'],
+                                        properties: {
+                                            packageName: { type: 'string', description: 'Normalized package name (lowercase)' },
+                                            timestamp: { type: 'integer', description: 'Unix timestamp when response was generated' },
+                                            total: { type: 'integer', description: 'Total number of versions before pagination' },
+                                            limit: { type: 'integer', description: 'Results per page limit' },
+                                            offset: { type: 'integer', description: 'Number of results skipped' },
+                                            hasMore: { type: 'boolean', description: 'Whether more results are available' },
+                                            versions: {
+                                                type: 'array',
+                                                items: {
+                                                    type: 'object',
+                                                    properties: {
+                                                        version: { type: 'string' },
+                                                        ecosystem: { type: 'string', enum: ['npm', 'pypi', 'maven', 'rubygems', 'cargo', 'go', 'nuget', 'generic', 'unknown'] },
+                                                        sources: {
+                                                            type: 'array',
+                                                            items: {
+                                                                type: 'object',
+                                                                properties: {
+                                                                    sourceTable: { type: 'string' },
+                                                                    sourceId: { type: 'string' }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    example: {
+                                        packageName: 'express',
+                                        timestamp: 1700000000,
+                                        total: 523,
+                                        limit: 100,
+                                        offset: 0,
+                                        hasMore: true,
+                                        versions: [
+                                            {
+                                                version: '4.18.2',
+                                                ecosystem: 'npm',
+                                                sources: [
+                                                    { sourceTable: 'package_version', sourceId: 'uuid-123' },
+                                                    { sourceTable: 'github_repository', sourceId: '12345' }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        '401': { $ref: '#/components/responses/Unauthorized' },
+                        '500': { $ref: '#/components/responses/InternalError' }
+                    }
+                }
+            },
+            '/product/{name}/{version}': {
+                get: {
+                    summary: 'Get product information for specific version',
+                    description: 'Returns normalized product information filtered by package name and version. Includes all ecosystems and sources for that specific version.',
+                    tags: ['Product/Package API'],
+                    security: [{ BearerAuth: [] }],
+                    parameters: [
+                        {
+                            name: 'name',
+                            in: 'path',
+                            required: true,
+                            schema: { type: 'string' },
+                            description: 'Package/product name (case-insensitive)',
+                            example: 'express'
+                        },
+                        {
+                            name: 'version',
+                            in: 'path',
+                            required: true,
+                            schema: { type: 'string' },
+                            description: 'Specific version number',
+                            example: '4.18.2'
+                        },
+                        {
+                            name: 'limit',
+                            in: 'query',
+                            required: false,
+                            schema: { type: 'integer', minimum: 1, maximum: 500, default: 100 },
+                            description: 'Maximum number of results per page'
+                        },
+                        {
+                            name: 'offset',
+                            in: 'query',
+                            required: false,
+                            schema: { type: 'integer', minimum: 0, default: 0 },
+                            description: 'Number of results to skip'
+                        }
+                    ],
+                    responses: {
+                        '200': {
+                            description: 'Successful response',
+                            content: {
+                                'application/json': {
+                                    schema: { $ref: '#/components/schemas/ProductResponse' }
+                                }
+                            }
+                        },
+                        '401': { $ref: '#/components/responses/Unauthorized' },
+                        '500': { $ref: '#/components/responses/InternalError' }
+                    }
+                }
+            },
+            '/product/{name}/{version}/{ecosystem}': {
+                get: {
+                    summary: 'Get product information for specific version and ecosystem',
+                    description: 'Returns normalized product information filtered by package name, version, and ecosystem. Most specific query endpoint.',
+                    tags: ['Product/Package API'],
+                    security: [{ BearerAuth: [] }],
+                    parameters: [
+                        {
+                            name: 'name',
+                            in: 'path',
+                            required: true,
+                            schema: { type: 'string' },
+                            description: 'Package/product name (case-insensitive)',
+                            example: 'express'
+                        },
+                        {
+                            name: 'version',
+                            in: 'path',
+                            required: true,
+                            schema: { type: 'string' },
+                            description: 'Specific version number',
+                            example: '4.18.2'
+                        },
+                        {
+                            name: 'ecosystem',
+                            in: 'path',
+                            required: true,
+                            schema: { type: 'string', enum: ['npm', 'pypi', 'maven', 'rubygems', 'cargo', 'go', 'nuget', 'generic', 'unknown'] },
+                            description: 'Package ecosystem',
+                            example: 'npm'
+                        },
+                        {
+                            name: 'limit',
+                            in: 'query',
+                            required: false,
+                            schema: { type: 'integer', minimum: 1, maximum: 500, default: 100 },
+                            description: 'Maximum number of results per page'
+                        },
+                        {
+                            name: 'offset',
+                            in: 'query',
+                            required: false,
+                            schema: { type: 'integer', minimum: 0, default: 0 },
+                            description: 'Number of results to skip'
+                        }
+                    ],
+                    responses: {
+                        '200': {
+                            description: 'Successful response',
+                            content: {
+                                'application/json': {
+                                    schema: { $ref: '#/components/schemas/ProductResponse' }
+                                }
+                            }
+                        },
+                        '401': { $ref: '#/components/responses/Unauthorized' },
+                        '500': { $ref: '#/components/responses/InternalError' }
+                    }
+                }
+            },
+            '/ecosystems': {
+                get: {
+                    summary: 'List all package ecosystems',
+                    description: 'Returns list of all supported package ecosystems with usage counts (number of unique packages per ecosystem).',
+                    tags: ['Product/Package API'],
+                    security: [{ BearerAuth: [] }],
+                    responses: {
+                        '200': {
+                            description: 'Successful response with ecosystem list',
+                            content: {
+                                'application/json': {
+                                    schema: {
+                                        type: 'object',
+                                        required: ['timestamp', 'ecosystems'],
+                                        properties: {
+                                            timestamp: { type: 'integer', description: 'Unix timestamp when response was generated' },
+                                            ecosystems: {
+                                                type: 'array',
+                                                items: {
+                                                    type: 'object',
+                                                    properties: {
+                                                        name: { type: 'string', description: 'Ecosystem name' },
+                                                        count: { type: 'integer', description: 'Number of unique packages' }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    example: {
+                                        timestamp: 1700000000,
+                                        ecosystems: [
+                                            { name: 'npm', count: 12345 },
+                                            { name: 'pypi', count: 8901 },
+                                            { name: 'maven', count: 5432 }
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        '401': { $ref: '#/components/responses/Unauthorized' },
+                        '500': { $ref: '#/components/responses/InternalError' }
+                    }
+                }
+            },
+            '/{package}/versions': {
+                get: {
+                    summary: 'Get all versions for a package',
+                    description: 'Returns all known versions for a package across all data sources with pagination support.',
+                    tags: ['Product/Package API'],
+                    security: [{ BearerAuth: [] }],
+                    parameters: [
+                        {
+                            name: 'package',
+                            in: 'path',
+                            required: true,
+                            schema: { type: 'string' },
+                            description: 'Package name (case-insensitive)',
+                            example: 'express'
+                        },
+                        {
+                            name: 'limit',
+                            in: 'query',
+                            required: false,
+                            schema: { type: 'integer', minimum: 1, maximum: 500, default: 100 },
+                            description: 'Maximum number of results per page'
+                        },
+                        {
+                            name: 'offset',
+                            in: 'query',
+                            required: false,
+                            schema: { type: 'integer', minimum: 0, default: 0 },
+                            description: 'Number of results to skip'
+                        }
+                    ],
+                    responses: {
+                        '200': {
+                            description: 'Successful response with version list',
+                            content: {
+                                'application/json': {
+                                    schema: {
+                                        type: 'object',
+                                        required: ['packageName', 'timestamp', 'total', 'limit', 'offset', 'hasMore', 'versions'],
+                                        properties: {
+                                            packageName: { type: 'string' },
+                                            timestamp: { type: 'integer' },
+                                            total: { type: 'integer', description: 'Total versions before pagination' },
+                                            limit: { type: 'integer' },
+                                            offset: { type: 'integer' },
+                                            hasMore: { type: 'boolean' },
+                                            versions: {
+                                                type: 'array',
+                                                items: {
+                                                    type: 'object',
+                                                    properties: {
+                                                        version: { type: 'string' },
+                                                        ecosystem: { type: 'string' },
+                                                        sources: { type: 'array', items: { type: 'string' } }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    example: {
+                                        packageName: 'express',
+                                        timestamp: 1700000000,
+                                        total: 523,
+                                        limit: 100,
+                                        offset: 0,
+                                        hasMore: true,
+                                        versions: [
+                                            { version: '4.18.2', ecosystem: 'npm', sources: ['package_version', 'github_repository'] }
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        '401': { $ref: '#/components/responses/Unauthorized' },
+                        '500': { $ref: '#/components/responses/InternalError' }
+                    }
+                }
+            },
+            '/{package}/vulns': {
+                get: {
+                    summary: 'Get all versions with CVE IDs for a package',
+                    description: 'Returns all known versions for a package with associated CVE identifiers. Includes pagination and total CVE count.',
+                    tags: ['Product/Package API'],
+                    security: [{ BearerAuth: [] }],
+                    parameters: [
+                        {
+                            name: 'package',
+                            in: 'path',
+                            required: true,
+                            schema: { type: 'string' },
+                            description: 'Package name (case-insensitive)',
+                            example: 'express'
+                        },
+                        {
+                            name: 'limit',
+                            in: 'query',
+                            required: false,
+                            schema: { type: 'integer', minimum: 1, maximum: 500, default: 100 },
+                            description: 'Maximum number of results per page'
+                        },
+                        {
+                            name: 'offset',
+                            in: 'query',
+                            required: false,
+                            schema: { type: 'integer', minimum: 0, default: 0 },
+                            description: 'Number of results to skip'
+                        }
+                    ],
+                    responses: {
+                        '200': {
+                            description: 'Successful response with versions and CVE IDs',
+                            content: {
+                                'application/json': {
+                                    schema: {
+                                        type: 'object',
+                                        required: ['packageName', 'timestamp', 'totalCVEs', 'total', 'limit', 'offset', 'hasMore', 'versions'],
+                                        properties: {
+                                            packageName: { type: 'string' },
+                                            timestamp: { type: 'integer' },
+                                            totalCVEs: { type: 'integer', description: 'Total unique CVEs affecting this package' },
+                                            total: { type: 'integer', description: 'Total versions before pagination' },
+                                            limit: { type: 'integer' },
+                                            offset: { type: 'integer' },
+                                            hasMore: { type: 'boolean' },
+                                            versions: {
+                                                type: 'array',
+                                                items: {
+                                                    type: 'object',
+                                                    properties: {
+                                                        version: { type: 'string' },
+                                                        ecosystem: { type: 'string' },
+                                                        sources: { type: 'array', items: { type: 'string' } },
+                                                        cveIds: { type: 'array', items: { type: 'string' } }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    example: {
+                                        packageName: 'express',
+                                        timestamp: 1700000000,
+                                        totalCVEs: 42,
+                                        total: 523,
+                                        limit: 100,
+                                        offset: 0,
+                                        hasMore: true,
+                                        versions: [
+                                            {
+                                                version: '4.17.1',
+                                                ecosystem: 'npm',
+                                                sources: ['cve_affected', 'package_version'],
+                                                cveIds: ['CVE-2024-1234', 'CVE-2024-5678']
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        '401': { $ref: '#/components/responses/Unauthorized' },
+                        '500': { $ref: '#/components/responses/InternalError' }
+                    }
+                }
             }
         },
         tags: [
@@ -1123,7 +1548,8 @@ Supports lookups by CVE ID (e.g., CVE-2024-1234) and other vulnerability identif
             },
             { name: 'CVE Information', description: 'Unified CVE metadata and data source information' },
             { name: 'Vulnerability Data', description: 'CVEListV5 format vulnerability records per data source' },
-            { name: 'Exploit Intelligence', description: 'Enriched exploit records from multiple sources including ExploitDB, Metasploit, Nuclei, VulnCheck XDB, CrowdSec sightings, and GitHub PoCs' }
+            { name: 'Exploit Intelligence', description: 'Enriched exploit records from multiple sources including ExploitDB, Metasploit, Nuclei, VulnCheck XDB, CrowdSec sightings, and GitHub PoCs' },
+            { name: 'Product/Package API', description: 'Normalized product and package information across all data sources with version tracking and CVE associations' }
         ],
         components: {
             securitySchemes: {
@@ -1163,6 +1589,39 @@ Supports lookups by CVE ID (e.g., CVE-2024-1234) and other vulnerability identif
                         }
                     }
                 },
+                ProductResponse: {
+                    type: 'object',
+                    required: ['packageName', 'timestamp', 'total', 'limit', 'offset', 'hasMore', 'versions'],
+                    properties: {
+                        packageName: { type: 'string', description: 'Normalized package name (lowercase)' },
+                        ecosystem: { type: 'string', description: 'Package ecosystem filter (if specified)' },
+                        timestamp: { type: 'integer', description: 'Unix timestamp when response was generated' },
+                        total: { type: 'integer', description: 'Total number of versions before pagination' },
+                        limit: { type: 'integer', description: 'Results per page limit' },
+                        offset: { type: 'integer', description: 'Number of results skipped' },
+                        hasMore: { type: 'boolean', description: 'Whether more results are available' },
+                        versions: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    version: { type: 'string' },
+                                    ecosystem: { type: 'string' },
+                                    sources: {
+                                        type: 'array',
+                                        items: {
+                                            type: 'object',
+                                            properties: {
+                                                sourceTable: { type: 'string' },
+                                                sourceId: { type: 'string' }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 Error: {
                     type: 'object',
                     properties: {
@@ -1175,6 +1634,30 @@ Supports lookups by CVE ID (e.g., CVE-2024-1234) and other vulnerability identif
                     properties: {
                         success: { type: 'boolean', example: true },
                         message: { type: 'string' }
+                    }
+                }
+            },
+            responses: {
+                Unauthorized: {
+                    description: 'Authentication required - missing or invalid JWT token',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/Error' }
+                        }
+                    }
+                },
+                InternalError: {
+                    description: 'Internal server error',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    error: { type: 'string' },
+                                    details: { type: 'string' }
+                                }
+                            }
+                        }
                     }
                 }
             }
