@@ -20,13 +20,13 @@ interface DataSourceConfig {
 }
 
 const DATA_SOURCES: DataSourceConfig[] = [
-    { name: 'mitre', table: 'mitreCveFile', schema: 'cvelistV5', r2BaseUrl: 'https://artifacts.vulnetix.com' },
-    { name: 'nist-nvd', table: 'nistNvdFile', schema: 'nvd-json-2.0', r2BaseUrl: 'https://artifacts.vulnetix.com' },
-    { name: 'vulncheck-nvd', table: 'vulnCheckNvdFile', schema: 'nvd-json-2.0', r2BaseUrl: 'https://artifacts.vulnetix.com' },
-    { name: 'vulncheck-kev', table: 'vulnCheckKevFile', schema: 'vulncheck-kev', r2BaseUrl: 'https://artifacts.vulnetix.com' },
-    { name: 'cisa-kev', table: 'cisaKevFile', schema: 'cisa-kev', r2BaseUrl: 'https://artifacts.vulnetix.com' },
-    { name: 'ghsa', table: 'ghsaFile', schema: 'osv', r2BaseUrl: 'https://artifacts.vulnetix.com' },
-    { name: 'osv', table: 'osvFile', schema: 'osv', r2BaseUrl: 'https://artifacts.vulnetix.com' },
+    { name: 'mitre', table: 'mitreCveFile', schema: 'cvelistV5', r2BaseUrl: 'https://artifacts.vulnetix.com/' },
+    { name: 'nist-nvd', table: 'nistNvdFile', schema: 'nvd-json-2.0', r2BaseUrl: 'https://artifacts.vulnetix.com/' },
+    { name: 'vulncheck-nvd', table: 'vulnCheckNvdFile', schema: 'nvd-json-2.0', r2BaseUrl: 'https://artifacts.vulnetix.com/' },
+    { name: 'vulncheck-kev', table: 'vulnCheckKevFile', schema: 'vulncheck-kev', r2BaseUrl: 'https://artifacts.vulnetix.com/' },
+    { name: 'cisa-kev', table: 'cisaKevFile', schema: 'cisa-kev', r2BaseUrl: 'https://artifacts.vulnetix.com/' },
+    { name: 'ghsa', table: 'ghsaFile', schema: 'osv', r2BaseUrl: 'https://artifacts.vulnetix.com/' },
+    { name: 'osv', table: 'osvFile', schema: 'osv', r2BaseUrl: 'https://artifacts.vulnetix.com/' },
     { name: 'euvd', table: 'euvdFile', schema: 'euvd', r2BaseUrl: 'https://artifacts.vulnetix.com' }
 ]
 
@@ -220,9 +220,9 @@ app.get('/:identifier', async (c) => {
     try {
         const startTime = Date.now()
 
-        // Normalize identifier to GHSA format
+        // Normalize GHSA to lowercase
         if (cveId.startsWith('GHSA-')) {
-            cveId = cveId.toLowerCase()
+            cveId = `GHSA-${cveId.slice(5).toLowerCase()}`
         }
 
         // Query all CVEMetadata records for this CVE across all sources

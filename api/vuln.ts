@@ -519,13 +519,18 @@ app.get('/:identifier', async (c) => {
     }
 
     // Normalize to uppercase for case-insensitive lookup
-    const normalizedVulnId = vulnId.trim().toUpperCase()
+    let normalizedVulnId = vulnId.trim().toUpperCase()
 
     // Detect identifier type to configure appropriate data sources
     const isCVE = normalizedVulnId.startsWith('CVE-')
     const isEUVD = normalizedVulnId.startsWith('EUVD-')
     const isGHSA = normalizedVulnId.startsWith('GHSA-')
     // Also supports PYSEC-*, RUSTSEC-*, GO-*, OSV-*, and any other identifiers stored in CVEMetadata
+
+    // Normalize GHSA to lowercase
+    if (isGHSA) {
+        normalizedVulnId = `GHSA-${normalizedVulnId.slice(5).toLowerCase()}`
+    }
 
     try {
         // Use VulnResolver to find the vulnerability
@@ -548,7 +553,7 @@ app.get('/:identifier', async (c) => {
                 enableAnchoreADP: isCVE,
                 enableEUVD: isEUVD || isCVE,
                 enableGitHubAdvisory: isGHSA,
-                enableOSV: true, // OSV supports CVE-*, GHSA-*, PYSEC-*, RUSTSEC-*, GO-*, etc.
+                enableOSV: !isCVE && !isEUVD && !isGHSA, // OSV supports CVE-*, GHSA-*, PYSEC-*, RUSTSEC-*, GO-*, etc.
                 enableGoogleOsi: isGHSA,
                 enableAIInference: true,
                 enableUrlCategorization: true,
@@ -559,10 +564,6 @@ app.get('/:identifier', async (c) => {
                 llm: c.env.llm,
                 r2adapter: r2adapter,
                 jwtCredentials: {
-                    clientId: c.env.GITHUB_APP_CLIENT_ID,
-                    clientSecret: c.env.GITHUB_APP_CLIENT_SECRET,
-                    privateKey: c.env.APP_PRIVATE_KEY,
-                    appId: c.env.GITHUB_APP_ID,
                     personalAccessToken: c.env.GITHUB_PAT
                 }
             })
