@@ -34,7 +34,7 @@ function isIpAllowed(clientIp: string, ipWhitelist: any): boolean {
 }
 
 /**
- * GET /auth/token
+ * GET /v1/auth/token
  * Exchange client credentials (via AWS SigV4) for JWT token
  */
 app.get('/token', async (c) => {

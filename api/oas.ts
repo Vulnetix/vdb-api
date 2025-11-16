@@ -33,12 +33,12 @@ This API uses a **simplified Organization-based credential model** for enterpris
 
 ### Authentication Flow
 1. **Sign requests** using AWS Signature Version 4 (SigV4 SHA-512)
-2. **Exchange signed request** for a JWT token at \`/auth/token\`
+2. **Exchange signed request** for a JWT token at \`/v1/auth/token\`
 3. **Use JWT Bearer token** for all subsequent API calls
 4. **Token expires** in 15 minutes - repeat steps 1-2 to refresh
 
 ### AWS SigV4 Signing
-Your requests to \`/auth/token\` must be signed using:
+Your requests to \`/v1/auth/token\` must be signed using:
 - **Algorithm**: AWS4-HMAC-SHA512
 - **Access Key**: Your Organization UUID (e.g., \`123e4567-e89b-12d3-a456-426614174000\`)
 - **Secret Key**: Your Organization Secret (64-character alphanumeric string)
@@ -1557,7 +1557,7 @@ Results are paginated and include source attribution for each version.`,
                     type: 'http',
                     scheme: 'bearer',
                     bearerFormat: 'JWT',
-                    description: 'JWT token obtained from /auth/token endpoint using AWS SigV4 signed request with your Organization credentials (Organization UUID + Secret)'
+                    description: 'JWT token obtained from /v1/auth/token endpoint using AWS SigV4 signed request with your Organization credentials (Organization UUID + Secret)'
                 },
                 SigV4: {
                     type: 'apiKey',

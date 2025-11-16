@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Test the /auth/token endpoint with AWS SigV4 authentication
+# Test the /v1/auth/token endpoint with AWS SigV4 authentication
 # This script demonstrates how to use the sign-aws-request.js helper
 
 set -e
@@ -21,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 SIGNER="${PROJECT_ROOT}/tests/generated/sign-aws-request.js"
 BASE_URL="${1:-http://localhost:8778}"
-AUTH_ENDPOINT="${BASE_URL}/auth/token"
+AUTH_ENDPOINT="${BASE_URL}/v1/auth/token"
 
 echo -e "${YELLOW}API Base URL:${NC} ${BASE_URL}"
 echo -e "${YELLOW}Auth Endpoint:${NC} ${AUTH_ENDPOINT}"

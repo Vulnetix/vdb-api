@@ -44,7 +44,7 @@ echo -e "${BLUE}Step 2:${NC} Converting to Postman Collection..."
 if command -v openapi2postmanv2 &> /dev/null; then
     openapi2postmanv2 -s "${OUTPUT_DIR}/openapi.json" -o "${OUTPUT_DIR}/postman-collection-base.json" -p
 
-    # Post-process the collection to add AWS Signature auth to /auth/token endpoint
+    # Post-process the collection to add AWS Signature auth to /v1/auth/token endpoint
     if command -v jq &> /dev/null; then
         # First, create the pre-request script content as a JSON file
         cat > "${OUTPUT_DIR}/prerequest-script.json" <<'PREREQ_EOF'
@@ -132,7 +132,7 @@ if command -v openapi2postmanv2 &> /dev/null; then
 ]
 PREREQ_EOF
 
-        # Recursively find and update /auth/token endpoint with AWS Signature V4 auth
+        # Recursively find and update /v1/auth/token endpoint with AWS Signature V4 auth
         jq --slurpfile prereqScript "${OUTPUT_DIR}/prerequest-script.json" '
             # Function to recursively process items
             def process_items:
@@ -233,8 +233,8 @@ EOF
 
 # Parse the OpenAPI spec and generate requests for other endpoints
 if command -v jq &> /dev/null; then
-    # Extract paths and generate requests (excluding /auth/token which we handled above)
-    jq -r '.paths | to_entries[] | select(.key != "/auth/token" and .key != "/api/auth/token") | "\n### \(.key)\n" + (.value | to_entries[] | "\(.key | ascii_upcase) {{baseUrl}}\(.key)\nAuthorization: Bearer {{token}}\nContent-Type: application/json\n")' \
+    # Extract paths and generate requests (excluding /v1/auth/token which we handled above)
+    jq -r '.paths | to_entries[] | select(.key != "/auth/token" and .key != "/auth/token") | "\n### \(.key)\n" + (.value | to_entries[] | "\(.key | ascii_upcase) {{baseUrl}}\(.key)\nAuthorization: Bearer {{token}}\nContent-Type: application/json\n")' \
         "${OUTPUT_DIR}/openapi.json" >> "${OUTPUT_DIR}/generated-requests.http"
 
     echo -e "${GREEN}✓ HTTP snippets generated with AWS auth${NC}"
@@ -276,7 +276,7 @@ const AWS_SERVICE = process.env.AWS_SERVICE || 'vdb';
 
 // Parse arguments
 const method = (process.argv[2] || 'GET').toUpperCase();
-const urlString = process.argv[3] || 'http://localhost:8778/auth/token';
+const urlString = process.argv[3] || 'http://localhost:8778/v1/auth/token';
 const body = process.argv[4] || '';
 
 // Generate signature using SHA-512
@@ -372,7 +372,7 @@ if [ ! -f "${OUTPUT_DIR}/POSTMAN_SETUP.md" ]; then
 
 ## Key Feature: AWS Signature V4 with SHA-512
 
-The `/auth/token` endpoint uses **AWS Signature V4 authentication with SHA-512**.
+The `/v1/auth/token` endpoint uses **AWS Signature V4 authentication with SHA-512**.
 
 **Important:** This API uses SHA-512 instead of the standard SHA-256. A pre-request script handles the signing automatically.
 
@@ -380,7 +380,7 @@ The `/auth/token` endpoint uses **AWS Signature V4 authentication with SHA-512**
 
 1. **Import:** Import `postman-collection.json` into Postman
 2. **Configure:** Set collection variables (see below)
-3. **Send:** Click Send on `/auth/token` - the pre-request script handles signing!
+3. **Send:** Click Send on `/v1/auth/token` - the pre-request script handles signing!
 
 ## Collection Variables
 
@@ -396,7 +396,7 @@ Set these in the **Variables** tab:
 
 ## What the Pre-Request Script Does Automatically
 
-When you send the `/auth/token` request, the embedded pre-request script:
+When you send the `/v1/auth/token` request, the embedded pre-request script:
 
 ✅ **Generates X-Amz-Date Header** - Current timestamp (e.g., `20250115T123456Z`)
 ✅ **Calculates SHA-512 Hash** - Payload and canonical request hashing
@@ -407,7 +407,7 @@ When you send the `/auth/token` request, the embedded pre-request script:
 
 ## Verify Setup
 
-1. Open `/auth/token` request
+1. Open `/v1/auth/token` request
 2. Go to **Authorization** tab
 3. Should show:
    - Type: **AWS Signature**
@@ -445,7 +445,7 @@ Auto-generated test files from the VDB API OpenAPI specification.
 ### Using Postman (Easiest)
 1. Import `postman-collection.json`
 2. Set Collection Variables: `awsAccessKeyId`, `awsSecretAccessKey`, `awsRegion`, `awsService`
-3. Send the `/auth/token` request - AWS signing is automatic!
+3. Send the `/v1/auth/token` request - AWS signing is automatic!
 
 ### Using httpyac (CLI)
 1. Copy `.env.example` to `.env` and add your AWS credentials
@@ -465,14 +465,14 @@ Auto-generated test files from the VDB API OpenAPI specification.
 
 ## Authentication Flow
 
-1. **Get JWT Token**: Use AWS Signature V4 to call `/auth/token`
+1. **Get JWT Token**: Use AWS Signature V4 to call `/v1/auth/token`
 2. **Use Token**: Include JWT in `Authorization: Bearer <token>` for protected endpoints
 
 ## Available Endpoints
 
 1. `GET /v1/spec` - OpenAPI specification (public)
 2. `GET /v1/swagger` - Swagger UI (public)
-3. `GET /auth/token` - Get JWT token (AWS SigV4 auth)
+3. `GET /v1/auth/token` - Get JWT token (AWS SigV4 auth)
 4. `GET /v1/info/{id}` - CVE metadata (JWT auth)
 5. `GET /v1/vuln/{id}` - CVE data (JWT auth)
 6. `GET /v1/exploits/{id}` - Exploit intel (JWT auth)
@@ -506,7 +506,7 @@ echo -e "  • ${YELLOW}README.md${NC} - Detailed usage instructions"
 echo -e "  • ${YELLOW}POSTMAN_SETUP.md${NC} - Step-by-step Postman configuration guide"
 echo ""
 echo -e "${GREEN}AWS Signature V4 Authentication:${NC}"
-echo -e "The /auth/token endpoint uses AWS Signature V4 - signing is automatic!"
+echo -e "The /v1/auth/token endpoint uses AWS Signature V4 - signing is automatic!"
 echo ""
 echo -e "${YELLOW}Option 1: Postman (Easiest - Recommended)${NC}"
 echo -e "  1. Import ${YELLOW}postman-collection.json${NC} into Postman"

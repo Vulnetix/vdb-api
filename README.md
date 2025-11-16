@@ -146,7 +146,7 @@ All API endpoints are versioned under `/v1` for stability and future compatibili
 
 ### Authentication
 
-- `GET /auth/token` - Exchange SigV4-signed request for JWT token
+- `GET /v1/auth/token` - Exchange SigV4-signed request for JWT token
 
 ### Protected Endpoints (Require JWT)
 

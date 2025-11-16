@@ -15,7 +15,7 @@
 @orgId = 12f62d51-25ac-441d-829d-f94104e2fbd4
 @orgSecret = gCJNrAMaUaI6aP27yO2cvin4DfMivVDUnUuDQs9XB2l0o49hQlrOnjmr8UBPVXi2
 
-# JWT Token (obtained from /auth/token endpoint)
+# JWT Token (obtained from /v1/auth/token endpoint)
 # You'll need to update this after authenticating
 @token = YOUR_JWT_TOKEN_HERE
 

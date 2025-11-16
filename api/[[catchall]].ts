@@ -17,7 +17,7 @@ app.all('*', async (c) => {
         availableEndpoints: [
             'GET /v1/spec - OpenAPI specification',
             'GET /v1/swagger - Swagger UI',
-            'GET /auth/token - Exchange SigV4-signed request for JWT token',
+            'GET /v1/auth/token - Exchange SigV4-signed request for JWT token',
             'GET /v1/info/{identifier} - CVE metadata and data source information',
             'GET /v1/vuln/{identifier} - Vulnerability records in CVEListV5 format',
             'GET /v1/exploits/{identifier} - Exploit intelligence and sightings'

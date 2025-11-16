@@ -1,6 +1,6 @@
 /**
  * JWT Authentication Middleware
- * Validates JWT Bearer tokens issued by /auth/token endpoint
+ * Validates JWT Bearer tokens issued by /v1/auth/token endpoint
  */
 import type { Context, Next } from 'hono'
 import { jwtVerify } from 'jose'
@@ -121,7 +121,7 @@ export async function jwtAuth(c: Context<HonoEnv>, next: Next) {
             if (error.name === 'JWTExpired') {
                 return c.json({
                     success: false,
-                    error: 'Token has expired. Please obtain a new token from /auth/token.'
+                    error: 'Token has expired. Please obtain a new token from /v1/auth/token.'
                 }, 401)
             }
 

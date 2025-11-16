@@ -35,7 +35,7 @@ fi
 TMP_FILE=$(mktemp /tmp/vdb-test.XXXXXX.http)
 cat > "$TMP_FILE" << EOF
 # @aws
-GET ${BASE_URL}/auth/token
+GET ${BASE_URL}/v1/auth/token
 AWS-Access-Key-Id: {{$processEnv AWS_ACCESS_KEY_ID}}
 AWS-Secret-Access-Key: {{$processEnv AWS_SECRET_ACCESS_KEY}}
 AWS-Region: {{$processEnv AWS_REGION}}
@@ -43,7 +43,7 @@ AWS-Service: {{$processEnv AWS_SERVICE}}
 EOF
 
 echo "✅ Credentials configured"
-echo "🚀 Testing /auth/token endpoint..."
+echo "🚀 Testing /v1/auth/token endpoint..."
 echo ""
 
 # Run the request

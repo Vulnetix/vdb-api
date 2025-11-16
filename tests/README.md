@@ -250,7 +250,7 @@ Tests support multiple environments via `test.config.http`:
 
 ### Authentication
 
-Tests require JWT tokens obtained from `/auth/token`:
+Tests require JWT tokens obtained from `/v1/auth/token`:
 
 1. Generate AWS SigV4 signature (see `docs/AUTH.md`)
 2. Exchange for JWT token

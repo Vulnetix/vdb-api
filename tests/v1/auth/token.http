@@ -10,14 +10,14 @@
 # Test 1: Get JWT Token (requires valid SigV4 signature)
 # NOTE: You'll need to generate a valid AWS SigV4 signature
 # See docs/AUTH.md for signature generation examples
-GET {{baseUrl}}/{{apiVersion}}/auth/token
+GET {{baseUrl}}/{{apiVersion}}/v1/auth/token
 Authorization: AWS4-HMAC-SHA512 Credential={{orgId}}/20240101/us-east-1/vdb/aws4_request, SignedHeaders=x-amz-date, Signature=YOUR_SIGNATURE_HERE
 X-Amz-Date: 20240101T120000Z
 
 ###
 # Test 2: Verify token response structure
 # @name getToken
-GET {{baseUrl}}/{{apiVersion}}/auth/token
+GET {{baseUrl}}/{{apiVersion}}/v1/auth/token
 Authorization: AWS4-HMAC-SHA512 Credential={{orgId}}/20240101/us-east-1/vdb/aws4_request, SignedHeaders=x-amz-date, Signature=YOUR_SIGNATURE_HERE
 X-Amz-Date: 20240101T120000Z
 
@@ -35,7 +35,7 @@ X-Amz-Date: 20240101T120000Z
 
 ###
 # Test 3: Authentication failure - missing signature
-GET {{baseUrl}}/{{apiVersion}}/auth/token
+GET {{baseUrl}}/{{apiVersion}}/v1/auth/token
 X-Amz-Date: 20240101T120000Z
 
 > {%
@@ -46,7 +46,7 @@ X-Amz-Date: 20240101T120000Z
 
 ###
 # Test 4: Authentication failure - invalid signature
-GET {{baseUrl}}/{{apiVersion}}/auth/token
+GET {{baseUrl}}/{{apiVersion}}/v1/auth/token
 Authorization: AWS4-HMAC-SHA512 Credential=invalid/20240101/us-east-1/vdb/aws4_request, SignedHeaders=x-amz-date, Signature=invalidsignature
 X-Amz-Date: 20240101T120000Z
 
@@ -59,6 +59,6 @@ X-Amz-Date: 20240101T120000Z
 
 ###
 # Test 5: Production - Get JWT Token
-GET {{prodUrl}}/{{apiVersion}}/auth/token
+GET {{prodUrl}}/{{apiVersion}}/v1/auth/token
 Authorization: AWS4-HMAC-SHA512 Credential={{orgId}}/20240101/us-east-1/vdb/aws4_request, SignedHeaders=x-amz-date, Signature=YOUR_SIGNATURE_HERE
 X-Amz-Date: 20240101T120000Z
