@@ -87,7 +87,7 @@ app.use('*', async (c, next) => {
 
 // Public paths that don't require authentication or rate limiting
 const publicPaths = [
-    '/auth/token',
+    '/v1/auth/token',
     '/v1/spec',
     '/v1/swagger',
 ]
@@ -132,7 +132,7 @@ app.route('/v1', packageVersionsAPI)
 app.route('/v1', packageVulnsAPI)
 
 // Mount authentication API route (public - used to GET JWT tokens)
-app.route('/auth', authAPI)
+app.route('/v1/auth', authAPI)
 
 // Catch-all handler for assets, artifacts, blog SSR, and SPA fallback (public - no auth required)
 // This must be last to ensure it doesn't intercept API routes
