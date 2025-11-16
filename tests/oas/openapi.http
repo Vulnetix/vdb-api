@@ -18,7 +18,7 @@ Accept: application/json
 
 ###
 # Test 3: Access Swagger UI
-GET {{baseUrl}}/v1/swagger
+GET {{baseUrl}}/v1/spec/ui
 Accept: text/html
 
 ###

@@ -128,7 +128,7 @@ curl http://localhost:8778/v1/spec
 
 - Full testing guide: [`tests/README.md`](tests/README.md)
 - API documentation: [`README.md`](README.md)
-- OpenAPI spec: http://localhost:8778/v1/swagger
+- OpenAPI spec: http://localhost:8778/v1/spec/ui
 
 ## 🎓 VS Code Extensions
 

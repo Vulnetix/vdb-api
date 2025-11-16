@@ -1,0 +1,88 @@
+###
+# Package Versions API Tests - /v1/{package}/versions
+# Tests for getting all versions for a package
+###
+
+# Load shared configuration
+< ../../test.config.http
+
+###
+# Test 1: Get all versions for a package
+GET {{baseUrl}}/{{apiVersion}}/express/versions
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+###
+# Test 2: Get versions with pagination (limit)
+GET {{baseUrl}}/{{apiVersion}}/express/versions?limit=20
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+###
+# Test 3: Get versions with offset
+GET {{baseUrl}}/{{apiVersion}}/express/versions?limit=20&offset=40
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+###
+# Test 4: Verify response structure
+# @name getPackageVersions
+GET {{baseUrl}}/{{apiVersion}}/react/versions
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+> {%
+  client.test("Package versions response is valid", function() {
+    client.assert(response.status === 200, "Response status is 200");
+    client.assert(response.body.packageName !== undefined, "Package name exists");
+    client.assert(response.body.timestamp !== undefined, "Timestamp exists");
+    client.assert(response.body.total !== undefined, "Total count exists");
+    client.assert(response.body.limit !== undefined, "Limit exists");
+    client.assert(response.body.offset !== undefined, "Offset exists");
+    client.assert(response.body.hasMore !== undefined, "HasMore flag exists");
+    client.assert(response.body.versions !== undefined, "Versions array exists");
+    client.assert(Array.isArray(response.body.versions), "Versions is an array");
+    
+    if (response.body.versions.length > 0) {
+      const version = response.body.versions[0];
+      client.assert(version.version !== undefined, "Version has version number");
+      client.assert(version.ecosystem !== undefined, "Version has ecosystem");
+      client.assert(version.sources !== undefined, "Version has sources");
+    }
+  });
+%}
+
+###
+# Test 5: Python package versions
+GET {{baseUrl}}/{{apiVersion}}/django/versions?limit=10
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+###
+# Test 6: Case insensitive package name
+GET {{baseUrl}}/{{apiVersion}}/EXPRESS/versions
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+###
+# Test 7: Package not found
+GET {{baseUrl}}/{{apiVersion}}/nonexistent-package-12345/versions
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+###
+# Test 8: Missing authentication
+GET {{baseUrl}}/{{apiVersion}}/express/versions
+Content-Type: {{contentType}}
+
+> {%
+  client.test("Missing auth returns 401", function() {
+    client.assert(response.status === 401, "Response status is 401");
+  });
+%}
+
+###
+# Test 9: Production - Get package versions
+GET {{prodUrl}}/{{apiVersion}}/express/versions?limit=50
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}

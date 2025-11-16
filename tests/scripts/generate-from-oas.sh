@@ -470,12 +470,25 @@ Auto-generated test files from the VDB API OpenAPI specification.
 
 ## Available Endpoints
 
-1. `GET /v1/spec` - OpenAPI specification (public)
-2. `GET /v1/swagger` - Swagger UI (public)
+### Public Endpoints
+1. `GET /v1/spec` - OpenAPI specification
+2. `GET /v1/spec/ui` - Swagger UI
+
+### Authentication
 3. `GET /v1/auth/token` - Get JWT token (AWS SigV4 auth)
-4. `GET /v1/info/{id}` - CVE metadata (JWT auth)
-5. `GET /v1/vuln/{id}` - CVE data (JWT auth)
-6. `GET /v1/exploits/{id}` - Exploit intel (JWT auth)
+
+### CVE Information & Vulnerability Data (JWT auth required)
+4. `GET /v1/info/{identifier}` - CVE metadata and data source information
+5. `GET /v1/vuln/{identifier}` - Vulnerability records in CVEListV5 format
+6. `GET /v1/exploits/{identifier}` - Exploit intelligence and sightings
+
+### Product/Package API (JWT auth required)
+7. `GET /v1/product/{name}` - Product information by package name
+8. `GET /v1/product/{name}/{version}` - Product information for specific version
+9. `GET /v1/product/{name}/{version}/{ecosystem}` - Product for version and ecosystem
+10. `GET /v1/ecosystems` - List all ecosystems with package counts
+11. `GET /v1/{package}/versions` - All versions for a package
+12. `GET /v1/{package}/vulns` - All vulnerabilities affecting a package
 
 ## Regenerate
 

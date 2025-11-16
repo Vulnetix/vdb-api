@@ -7,7 +7,7 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
 import anylogger from 'anylogger'
 import 'anylogger-console'
-import { Hono } from 'hono'
+import { Context, Hono } from 'hono'
 import { Pool } from 'pg'
 import { v4 as uuidv4 } from 'uuid'
 import { DEFAULT_CACHE_OPTIONS } from './src/cache/cache-options'
@@ -23,7 +23,6 @@ import oasAPI from './api/oas'
 import packageVersionsAPI from './api/package-versions'
 import packageVulnsAPI from './api/package-vulns'
 import productAPI from './api/product'
-import swaggerUI from './api/swagger'
 import vulnAPI from './api/vuln'
 
 import { jwtAuth } from './src/middleware/jwt-auth'
@@ -89,7 +88,7 @@ app.use('*', async (c, next) => {
 const publicPaths = [
     '/v1/auth/token',
     '/v1/spec',
-    '/v1/swagger',
+    '/v1/spec/ui',
 ]
 
 // Authentication middleware - validates JWT sessions for protected routes
@@ -111,7 +110,9 @@ app.use('*', async (c, next) => {
 // API Version 1 Routes
 // Mount OpenAPI specification route (public - no auth required)
 app.route('/v1/spec', oasAPI)
-app.route('/v1/swagger', swaggerUI)
+app.get('/v1/spec/ui', (c: Context<HonoEnv>) => {
+    return c.redirect('https://redocly.github.io/redoc/?url=https://api.vdb.vulnetix.com/v1/spec', 302)
+})
 
 // Mount CVE info API route (requires JWT auth and rate limiting)
 app.route('/v1/info', infoAPI)

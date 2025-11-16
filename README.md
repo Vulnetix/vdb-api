@@ -142,7 +142,7 @@ All API endpoints are versioned under `/v1` for stability and future compatibili
 ### Public Endpoints
 
 - `GET /v1/spec` - OpenAPI specification (JSON)
-- `GET /v1/swagger` - Swagger UI (interactive documentation)
+- `GET /v1/spec/ui` - Interactive documentation
 
 ### Authentication
 
@@ -150,16 +150,20 @@ All API endpoints are versioned under `/v1` for stability and future compatibili
 
 ### Protected Endpoints (Require JWT)
 
+#### CVE Information & Vulnerability Data
+
 - `GET /v1/info/{identifier}` - CVE metadata and data source information
 - `GET /v1/vuln/{identifier}` - Vulnerability records in CVEListV5 format
 - `GET /v1/exploits/{identifier}` - Exploit intelligence and sightings
 
-### Legacy Redirects
+#### Product/Package API
 
-Unversioned endpoints redirect to `/v1` with HTTP 301:
-- `/info/*` → `/v1/info/*`
-- `/vuln/*` → `/v1/vuln/*`
-- `/exploits/*` → `/v1/exploits/*`
+- `GET /v1/product/{name}` - Product information by package name with pagination
+- `GET /v1/product/{name}/{version}` - Product information for specific version
+- `GET /v1/product/{name}/{version}/{ecosystem}` - Product information for specific version and ecosystem
+- `GET /v1/ecosystems` - List all ecosystems with package counts
+- `GET /v1/{package}/versions` - All versions for a package with pagination
+- `GET /v1/{package}/vulns` - All vulnerabilities affecting a package with version mapping
 
 ## Configuration
 
@@ -313,16 +317,38 @@ curl http://localhost:8778/v1/auth/token \
   -H "Authorization: AWS4-HMAC-SHA512 Credential=..." \
   -H "X-Amz-Date: 20250115T120000Z"
 
-# Test info endpoint (requires JWT)
+# Test CVE info endpoint (requires JWT)
 curl http://localhost:8778/v1/info/CVE-2024-1234 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 
-# Test vuln endpoint
+# Test vulnerability data endpoint
 curl http://localhost:8778/v1/vuln/CVE-2024-1234 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 
 # Test exploits endpoint
 curl http://localhost:8778/v1/exploits/CVE-2024-1234 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Test product endpoints
+curl http://localhost:8778/v1/product/express \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+curl http://localhost:8778/v1/product/express/4.18.2 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+curl http://localhost:8778/v1/product/express/4.18.2/npm \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Test ecosystems endpoint
+curl http://localhost:8778/v1/ecosystems \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Test package versions endpoint
+curl http://localhost:8778/v1/express/versions?limit=20 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Test package vulnerabilities endpoint
+curl http://localhost:8778/v1/express/vulns \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 

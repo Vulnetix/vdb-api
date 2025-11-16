@@ -20,7 +20,9 @@ export const unauthenticatedRoutes = {
      */
     static: [
         "/v1/spec",
-        "/v1/swagger",
+                "/v1/oas",
+        "/v1/spec/ui",
+        "/v1/info",
     ],
     /**
      * Route prefixes that never require authentication

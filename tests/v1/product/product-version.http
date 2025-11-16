@@ -1,0 +1,64 @@
+###
+# Product API Tests - /v1/product/{name}/{version}
+# Tests for product information by package name and version
+###
+
+# Load shared configuration
+< ../../test.config.http
+
+###
+# Test 1: Get product information for specific version
+GET {{baseUrl}}/{{apiVersion}}/product/express/4.18.2
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+###
+# Test 2: Get product with pagination
+GET {{baseUrl}}/{{apiVersion}}/product/express/4.18.2?limit=10
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+###
+# Test 3: Verify response structure
+# @name getProductVersion
+GET {{baseUrl}}/{{apiVersion}}/product/react/18.2.0
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+> {%
+  client.test("Product version response is valid", function() {
+    client.assert(response.status === 200, "Response status is 200");
+    client.assert(response.body.packageName !== undefined, "Package name exists");
+    client.assert(response.body.version !== undefined, "Version exists");
+    client.assert(response.body.timestamp !== undefined, "Timestamp exists");
+  });
+%}
+
+###
+# Test 4: Python package with version
+GET {{baseUrl}}/{{apiVersion}}/product/django/4.2.0
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+###
+# Test 5: Version not found
+GET {{baseUrl}}/{{apiVersion}}/product/express/99.99.99
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+###
+# Test 6: Missing authentication
+GET {{baseUrl}}/{{apiVersion}}/product/express/4.18.2
+Content-Type: {{contentType}}
+
+> {%
+  client.test("Missing auth returns 401", function() {
+    client.assert(response.status === 401, "Response status is 401");
+  });
+%}
+
+###
+# Test 7: Production - Get product version information
+GET {{prodUrl}}/{{apiVersion}}/product/express/4.18.2
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}

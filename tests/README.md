@@ -25,8 +25,17 @@ tests/
 │   │   └── cve-info.http
 │   ├── vuln/                  # Vulnerability data tests
 │   │   └── vulnerability.http
-│   └── exploits/              # Exploit intelligence tests
-│       └── exploit-intel.http
+│   ├── exploits/              # Exploit intelligence tests
+│   │   └── exploit-intel.http
+│   ├── product/               # Product/package API tests
+│   │   ├── product-name.http         # /v1/product/{name}
+│   │   ├── product-version.http      # /v1/product/{name}/{version}
+│   │   └── product-ecosystem.http    # /v1/product/{name}/{version}/{ecosystem}
+│   ├── ecosystems/            # Ecosystem listing tests
+│   │   └── ecosystems.http           # /v1/ecosystems
+│   └── package/               # Package-specific tests
+│       ├── versions.http             # /v1/{package}/versions
+│       └── vulns.http                # /v1/{package}/vulns
 ├── scripts/                   # Test automation scripts
 │   ├── run-tests.sh          # Main test runner
 │   └── generate-from-oas.sh  # Generate tests from OpenAPI
