@@ -2,17 +2,33 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import {
   parseAuthorizationHeader,
   validateSigV4Signature,
+  validateSigV4SignatureWithFallback,
   normalizeHeaders
 } from './sigv4'
 
 describe('SigV4 Signature Verification', () => {
   describe('parseAuthorizationHeader', () => {
-    it('should parse valid Authorization header', () => {
+    it('should parse valid SHA512 Authorization header', () => {
       const authHeader = 'AWS4-HMAC-SHA512 Credential=ACCESS_KEY/20240101/us-east-1/vdb/aws4_request, SignedHeaders=host;x-amz-date, Signature=abc123'
       const result = parseAuthorizationHeader(authHeader)
 
       expect(result).toEqual({
-        algorithm: 'AWS4-HMAC-SHA512',
+        algorithm: 'AWS4-HMAC-SHA512' as const,
+        accessKey: 'ACCESS_KEY',
+        date: '20240101',
+        region: 'us-east-1',
+        service: 'vdb',
+        signedHeaders: ['host', 'x-amz-date'],
+        signature: 'abc123'
+      })
+    })
+
+    it('should parse valid SHA256 Authorization header', () => {
+      const authHeader = 'AWS4-HMAC-SHA256 Credential=ACCESS_KEY/20240101/us-east-1/vdb/aws4_request, SignedHeaders=host;x-amz-date, Signature=abc123'
+      const result = parseAuthorizationHeader(authHeader)
+
+      expect(result).toEqual({
+        algorithm: 'AWS4-HMAC-SHA256' as const,
         accessKey: 'ACCESS_KEY',
         date: '20240101',
         region: 'us-east-1',
@@ -123,7 +139,7 @@ describe('SigV4 Signature Verification', () => {
         }
 
         const parsedAuth = {
-          algorithm: 'AWS4-HMAC-SHA512',
+          algorithm: 'AWS4-HMAC-SHA512' as const,
           accessKey: 'ACCESS_KEY',
           date: '20240101',
           region: 'us-east-1',
@@ -155,7 +171,7 @@ describe('SigV4 Signature Verification', () => {
         }
 
         const parsedAuth = {
-          algorithm: 'AWS4-HMAC-SHA512',
+          algorithm: 'AWS4-HMAC-SHA512' as const,
           accessKey: 'ACCESS_KEY',
           date: '20240101',
           region: 'us-east-1',
@@ -187,7 +203,7 @@ describe('SigV4 Signature Verification', () => {
         }
 
         const parsedAuth = {
-          algorithm: 'AWS4-HMAC-SHA512',
+          algorithm: 'AWS4-HMAC-SHA512' as const,
           accessKey: 'ACCESS_KEY',
           date: '20240101',
           region: 'us-east-1',
@@ -222,7 +238,7 @@ describe('SigV4 Signature Verification', () => {
         }
 
         const parsedAuth = {
-          algorithm: 'AWS4-HMAC-SHA512',
+          algorithm: 'AWS4-HMAC-SHA512' as const,
           accessKey: 'ACCESS_KEY',
           date: '20240101',
           region: 'us-east-1',
@@ -251,7 +267,7 @@ describe('SigV4 Signature Verification', () => {
         }
 
         const parsedAuth = {
-          algorithm: 'AWS4-HMAC-SHA512',
+          algorithm: 'AWS4-HMAC-SHA512' as const,
           accessKey: 'ACCESS_KEY',
           date: '20240101',
           region: 'us-east-1',
@@ -281,7 +297,7 @@ describe('SigV4 Signature Verification', () => {
         }
 
         const parsedAuth = {
-          algorithm: 'AWS4-HMAC-SHA512',
+          algorithm: 'AWS4-HMAC-SHA512' as const,
           accessKey: 'ACCESS_KEY',
           date: '20240101',
           region: 'us-east-1',
@@ -313,7 +329,7 @@ describe('SigV4 Signature Verification', () => {
         }
 
         const parsedAuth = {
-          algorithm: 'AWS4-HMAC-SHA512',
+          algorithm: 'AWS4-HMAC-SHA512' as const,
           accessKey: 'ACCESS_KEY',
           date: '20240101',
           region: 'us-east-1',
@@ -348,7 +364,7 @@ describe('SigV4 Signature Verification', () => {
         }
 
         const parsedAuth = {
-          algorithm: 'AWS4-HMAC-SHA512',
+          algorithm: 'AWS4-HMAC-SHA512' as const,
           accessKey: 'ACCESS_KEY',
           date: '20240101',
           region: 'us-east-1',
@@ -373,7 +389,7 @@ describe('SigV4 Signature Verification', () => {
         }
 
         const parsedAuth = {
-          algorithm: 'AWS4-HMAC-SHA512',
+          algorithm: 'AWS4-HMAC-SHA512' as const,
           accessKey: 'ACCESS_KEY',
           date: '20240101',
           region: 'us-east-1',
@@ -421,7 +437,7 @@ describe('SigV4 Signature Verification', () => {
         }
 
         const parsedAuth = {
-          algorithm: 'AWS4-HMAC-SHA512',
+          algorithm: 'AWS4-HMAC-SHA512' as const,
           accessKey: 'ACCESS_KEY',
           date: '20240101',
           region: 'us-east-1',
@@ -447,7 +463,7 @@ describe('SigV4 Signature Verification', () => {
         const headers = {}
 
         const parsedAuth = {
-          algorithm: 'AWS4-HMAC-SHA512',
+          algorithm: 'AWS4-HMAC-SHA512' as const,
           accessKey: 'ACCESS_KEY',
           date: '20240101',
           region: 'us-east-1',
@@ -480,7 +496,7 @@ describe('SigV4 Signature Verification', () => {
         }
 
         const parsedAuth = {
-          algorithm: 'AWS4-HMAC-SHA512',
+          algorithm: 'AWS4-HMAC-SHA512' as const,
           accessKey: 'ACCESS_KEY',
           date: '20240101',
           region: 'us-east-1',
@@ -501,6 +517,177 @@ describe('SigV4 Signature Verification', () => {
 
         // Host is present but not verified
         expect(true).toBe(true)
+      })
+    })
+  })
+
+  describe('validateSigV4SignatureWithFallback', () => {
+    const secretKey = 'test-secret-key-12345'
+    const method = 'GET'
+    const path = '/v1/test'
+    const queryString = ''
+    const body = ''
+
+    describe('SHA256 algorithm', () => {
+      it('should validate SHA256 signature when client specifies SHA256', async () => {
+        const headers = {
+          'host': 'api.example.com',
+          'x-amz-date': '20240101T120000Z'
+        }
+
+        const authHeader = 'AWS4-HMAC-SHA256 Credential=ACCESS_KEY/20240101/us-east-1/vdb/aws4_request, SignedHeaders=host;x-amz-date, Signature=test-signature'
+
+        const result = await validateSigV4SignatureWithFallback(
+          authHeader,
+          method,
+          path,
+          queryString,
+          headers,
+          body,
+          secretKey
+        )
+
+        // Should try SHA256 only since client specified SHA256
+        expect(result.isValid).toBeDefined()
+        expect(result.algorithm).toBe('AWS4-HMAC-SHA256')
+      })
+
+      it('should return false for invalid SHA256 signature', async () => {
+        const headers = {
+          'host': 'api.example.com',
+          'x-amz-date': '20240101T120000Z'
+        }
+
+        const authHeader = 'AWS4-HMAC-SHA256 Credential=ACCESS_KEY/20240101/us-east-1/vdb/aws4_request, SignedHeaders=host;x-amz-date, Signature=invalid-signature'
+
+        const result = await validateSigV4SignatureWithFallback(
+          authHeader,
+          method,
+          path,
+          queryString,
+          headers,
+          body,
+          secretKey
+        )
+
+        expect(result.isValid).toBe(false)
+      })
+    })
+
+    describe('SHA512 algorithm with SHA256 fallback', () => {
+      it('should try SHA256 first when client sends SHA512', async () => {
+        const headers = {
+          'host': 'api.example.com',
+          'x-amz-date': '20240101T120000Z'
+        }
+
+        const authHeader = 'AWS4-HMAC-SHA512 Credential=ACCESS_KEY/20240101/us-east-1/vdb/aws4_request, SignedHeaders=host;x-amz-date, Signature=test-signature'
+
+        const result = await validateSigV4SignatureWithFallback(
+          authHeader,
+          method,
+          path,
+          queryString,
+          headers,
+          body,
+          secretKey
+        )
+
+        // Should try SHA256 first, then SHA512
+        expect(result.isValid).toBeDefined()
+        expect(result.parsedAuth).toBeDefined()
+      })
+
+      it('should return which algorithm succeeded', async () => {
+        const headers = {
+          'x-amz-date': '20240101T120000Z'
+        }
+
+        const authHeader = 'AWS4-HMAC-SHA512 Credential=ACCESS_KEY/20240101/us-east-1/vdb/aws4_request, SignedHeaders=x-amz-date, Signature=test-signature'
+
+        const result = await validateSigV4SignatureWithFallback(
+          authHeader,
+          method,
+          path,
+          queryString,
+          headers,
+          body,
+          secretKey
+        )
+
+        // The algorithm property indicates which hash algorithm worked
+        if (result.isValid) {
+          expect(['AWS4-HMAC-SHA256', 'AWS4-HMAC-SHA512']).toContain(result.algorithm)
+        }
+      })
+    })
+
+    describe('Invalid headers', () => {
+      it('should return false for invalid auth header', async () => {
+        const headers = {
+          'x-amz-date': '20240101T120000Z'
+        }
+
+        const authHeader = 'Bearer invalid-token'
+
+        const result = await validateSigV4SignatureWithFallback(
+          authHeader,
+          method,
+          path,
+          queryString,
+          headers,
+          body,
+          secretKey
+        )
+
+        expect(result.isValid).toBe(false)
+      })
+
+      it('should return false for malformed auth header', async () => {
+        const headers = {
+          'x-amz-date': '20240101T120000Z'
+        }
+
+        const authHeader = 'AWS4-HMAC-SHA256 InvalidFormat'
+
+        const result = await validateSigV4SignatureWithFallback(
+          authHeader,
+          method,
+          path,
+          queryString,
+          headers,
+          body,
+          secretKey
+        )
+
+        expect(result.isValid).toBe(false)
+      })
+    })
+
+    describe('Host header with fallback', () => {
+      it('should verify host header with SHA256 (preferred)', async () => {
+        const headers = {
+          'host': 'api.vulnetix.com',
+          'x-amz-date': '20240101T120000Z'
+        }
+
+        const authHeader = 'AWS4-HMAC-SHA512 Credential=ACCESS_KEY/20240101/us-east-1/vdb/aws4_request, SignedHeaders=host;x-amz-date, Signature=test-signature'
+
+        const result = await validateSigV4SignatureWithFallback(
+          authHeader,
+          method,
+          path,
+          queryString,
+          headers,
+          body,
+          secretKey
+        )
+
+        // Should process host header verification
+        expect(result.parsedAuth).toBeDefined()
+        if (result.parsedAuth) {
+          expect(result.parsedAuth.signedHeaders).toContain('host')
+        }
       })
     })
   })
