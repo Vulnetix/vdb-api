@@ -6,7 +6,7 @@ import type { PrismaClient } from '@prisma/client'
 import type { HonoEnv } from '@worker'
 import { Hono } from 'hono'
 import { SignJWT } from 'jose'
-import { parseAuthorizationHeader, validateSigV4Signature, normalizeHeaders } from '@/shared/sigv4'
+import { parseAuthorizationHeader, validateSigV4SignatureWithFallback, normalizeHeaders } from '@/shared/sigv4'
 
 const app = new Hono<HonoEnv>()
 
@@ -43,10 +43,10 @@ app.get('/token', async (c) => {
 
     try {
         const authHeader = c.req.header('Authorization')
-        if (!authHeader || !authHeader.startsWith('AWS4-HMAC-SHA512')) {
+        if (!authHeader || (!authHeader.startsWith('AWS4-HMAC-SHA256') && !authHeader.startsWith('AWS4-HMAC-SHA512'))) {
             return c.json({
                 success: false,
-                error: 'Missing or invalid Authorization header. Expected AWS4-HMAC-SHA512 signature.'
+                error: 'Missing or invalid Authorization header. Expected AWS4-HMAC-SHA256 or AWS4-HMAC-SHA512 signature.'
             }, 401)
         }
 
@@ -91,7 +91,7 @@ app.get('/token', async (c) => {
 
         //TODO: Check expiration from JWT in Session
 
-        // Validate SigV4 signature
+        // Validate SigV4 signature - tries SHA256 first (preferred), then SHA512
         const secretKey = decryptSecretKey(organization.secret)
         const method = c.req.method
         const url = new URL(c.req.url)
@@ -100,23 +100,35 @@ app.get('/token', async (c) => {
         const headers = normalizeHeaders(c.req.raw)
         const body = '' // GET request has no body
 
-        const isValid = await validateSigV4Signature(
+        const validationResult = await validateSigV4SignatureWithFallback(
+            authHeader,
             method,
             path,
             queryString,
             headers,
             body,
-            secretKey,
-            parsedAuth
+            secretKey
         )
 
-        if (!isValid) {
-            logger.warn('Authentication failed: Invalid signature', { accessKey, uuid: organization.uuid })
+        if (!validationResult.isValid) {
+            logger.warn('Authentication failed: Invalid signature', {
+                accessKey,
+                uuid: organization.uuid,
+                attemptedAlgorithm: parsedAuth.algorithm
+            })
             return c.json({
                 success: false,
                 error: 'Invalid signature'
             }, 401)
         }
+
+        // Log which algorithm was successfully used
+        logger.info('Signature validated', {
+            accessKey,
+            uuid: organization.uuid,
+            algorithm: validationResult.algorithm,
+            requestedAlgorithm: parsedAuth.algorithm
+        })
 
         // Generate JWT token
         const jwtSecret = c.env.JWT_SECRET
