@@ -17,7 +17,7 @@ preview_id = "a9572ae80b5742ac96f62bcd180210c9"
 
 [[hyperdrive]]
 binding = "vdb"
-id = "5f6d92ae237b4cfab6e4e004682212ec"
+id = "da3df536667f4e35bfef02ea620f9f5c"
 localConnectionString = "postgresql://postgres:postgres@127.0.0.1:5432/vdb"
 
 # Queue Configuration for CVE/Advisory Processing
@@ -52,7 +52,7 @@ id = "427a79e08dfe4b36b8eff10645e17337"
 
 [[env.production.hyperdrive]]
 binding = "vdb"
-id = "5f6d92ae237b4cfab6e4e004682212ec"
+id = "da3df536667f4e35bfef02ea620f9f5c"
 
 [[env.production.queues.producers]]
 queue = "cve-processing-queue"
