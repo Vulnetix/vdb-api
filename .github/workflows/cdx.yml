@@ -34,7 +34,7 @@ jobs:
           yarn cyclonedx --spec-version 1.6 --output-format JSON --output-file vulnetix.cdx.json
 
       - name: Upload vulnetix.cdx.json
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: cyclonedx
           path: vulnetix.cdx.json
