@@ -24,7 +24,7 @@
     "@pandatix/js-cvss": "^0.4.4",
     "@prisma/adapter-pg": "^6.18.0",
     "@prisma/client": "^6.18.0",
-    "@prisma/engines": "^6.17.1",
+    "@prisma/engines": "^7.0.1",
     "@streamparser/json-whatwg": "^0.0.22",
     "@types/uuid": "^11.0.0",
     "ajv": "^8.17.1",
