@@ -57,7 +57,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/pg": "^8.11.10",
     "@vitest/ui": "^4.0.14",
-    "node-gyp": "^11.5.0",
+    "node-gyp": "^12.1.0",
     "prisma": "^6.18.0",
     "tst-reflect-transformer": "^0.12.5",
     "typescript": "^5.9.3",
