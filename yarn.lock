@@ -1100,18 +1100,27 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@prisma/client@npm:^6.18.0":
-  version: 6.19.0
-  resolution: "@prisma/client@npm:6.19.0"
+"@prisma/client-runtime-utils@npm:7.0.1":
+  version: 7.0.1
+  resolution: "@prisma/client-runtime-utils@npm:7.0.1"
+  checksum: 10c0/94f1ca88eae866043b5407b6a0469df5a88f869107c08d749584f4c6d1e719f3f3fbdc4dbb183f219ce3c55648894caf10fab9552b61c57b2e9c992082263a0a
+  languageName: node
+  linkType: hard
+
+"@prisma/client@npm:^7.0.1":
+  version: 7.0.1
+  resolution: "@prisma/client@npm:7.0.1"
+  dependencies:
+    "@prisma/client-runtime-utils": "npm:7.0.1"
   peerDependencies:
     prisma: "*"
-    typescript: ">=5.1.0"
+    typescript: ">=5.4.0"
   peerDependenciesMeta:
     prisma:
       optional: true
     typescript:
       optional: true
-  checksum: 10c0/c3173fae0195adc952ab47d30120b5ae397b71997b9b60c2ba78fb10a99d10bda2996869c311164a08311ae0bbde41b86806898e49648df3fe713fbe8cb4659e
+  checksum: 10c0/273ef40faf4ff1ab0f63ae546466a3cbd189317b674f0ce89723208afbfbcd57bda0fbe98150af68849d41811482f4f236e49ab9257b361ed69d0674284faf20
   languageName: node
   linkType: hard
 
@@ -4503,7 +4512,7 @@ __metadata:
     "@octokit/rest": "npm:^22.0.0"
     "@pandatix/js-cvss": "npm:^0.4.4"
     "@prisma/adapter-pg": "npm:^6.18.0"
-    "@prisma/client": "npm:^6.18.0"
+    "@prisma/client": "npm:^7.0.1"
     "@prisma/engines": "npm:^6.17.1"
     "@streamparser/json-whatwg": "npm:^0.0.22"
     "@types/js-yaml": "npm:^4.0.9"
