@@ -61,7 +61,7 @@
     "prisma": "^6.18.0",
     "tst-reflect-transformer": "^0.12.5",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.14",
+    "vitest": "^4.0.15",
     "wrangler": "^4.45.0"
   },
   "packageManager": "yarn@4.10.3"
